@@ -63,13 +63,21 @@ function CommentsSection({ comments, onChange }) {
   const [newComment, setNewComment] = useState('')
 
   const addComment = () => {
-    if (!newComment.trim()) return
-    onChange([...comments, { text: newComment, date: new Date().toISOString() }])
+    const trimmed = newComment.trim()
+    if (!trimmed) return
+    onChange([...comments, { text: trimmed, date: new Date().toISOString() }])
     setNewComment('')
   }
 
   const removeComment = (i) => {
+    if (!confirm('Удалить комментарий?')) return
     onChange(comments.filter((_, j) => j !== i))
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      addComment()
+    }
   }
 
   return (
@@ -87,7 +95,8 @@ function CommentsSection({ comments, onChange }) {
       <textarea 
         value={newComment} 
         onChange={e => setNewComment(e.target.value)} 
-        placeholder="Добавить комментарий..." 
+        onKeyDown={handleKeyDown}
+        placeholder="Добавить комментарий... (Ctrl+Enter для отправки)" 
         style={{ ...s.input, minHeight: 60, resize: 'vertical', marginBottom: 6 }} 
       />
       <button style={s.addCommentBtn} onClick={addComment}>Добавить комментарий</button>
@@ -131,10 +140,24 @@ export default function Modal({ mode, ctx, onSave, onDelete, onClose }) {
     }
   })
 
+  // Handle Escape key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [onClose])
+
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   const handleSave = () => {
-    if (!form.name.trim()) return
+    if (!form.name.trim()) {
+      alert('Название не может быть пустым')
+      return
+    }
     onSave(form)
   }
 

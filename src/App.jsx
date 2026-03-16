@@ -81,13 +81,39 @@ export default function App() {
     } else if (mode === 'epic-edit') {
       update(s => ({ ...s, epics: s.epics.map(e => e.id === ctx.id ? { ...e, ...form } : e) }))
     } else if (mode === 'task') {
+      // Validate epicId exists
+      if (!form.epicId || !epics.find(e => e.id === form.epicId)) {
+        alert('Ошибка: не выбран эпик. Создайте эпик сначала.')
+        return
+      }
+      // Filter out empty artifacts
+      const cleanedArtifacts = (form.artifacts || []).filter(a => a.name.trim())
       update(s => ({
         ...s,
-        tasks: [...s.tasks, { id: `t${s.nextTaskId}`, epicId: ctx.epicId, parentId: ctx.parentId || null, ...form }],
+        tasks: [...s.tasks, { 
+          id: `t${s.nextTaskId}`, 
+          epicId: ctx.epicId, 
+          parentId: ctx.parentId || null, 
+          ...form,
+          artifacts: cleanedArtifacts,
+          comments: form.comments || []
+        }],
         nextTaskId: s.nextTaskId + 1
       }))
     } else if (mode === 'task-edit') {
-      update(s => ({ ...s, tasks: s.tasks.map(t => t.id === ctx.id ? { ...t, ...form } : t) }))
+      // Filter out empty artifacts
+      const cleanedArtifacts = (form.artifacts || []).filter(a => a.name.trim())
+      update(s => ({ 
+        ...s, 
+        tasks: s.tasks.map(t => t.id === ctx.id ? { 
+          ...t, 
+          ...form,
+          artifacts: cleanedArtifacts,
+          comments: form.comments || [],
+          // Remove old 'notes' field if exists
+          notes: undefined
+        } : t) 
+      }))
     }
 
     closeModal()
@@ -95,6 +121,11 @@ export default function App() {
 
   const handleDelete = () => {
     const { mode, ctx } = modal
+    
+    if (!confirm('Вы уверены? Это действие нельзя отменить.')) {
+      return
+    }
+    
     if (mode === 'epic-edit') {
       update(s => ({
         ...s,
@@ -102,7 +133,20 @@ export default function App() {
         tasks: s.tasks.filter(t => t.epicId !== ctx.id)
       }))
     } else if (mode === 'task-edit') {
-      update(s => ({ ...s, tasks: s.tasks.filter(t => t.id !== ctx.id && t.parentId !== ctx.id) }))
+      // Recursively collect all child task IDs
+      const collectChildIds = (taskId) => {
+        const children = tasks.filter(t => t.parentId === taskId)
+        const childIds = children.map(c => c.id)
+        const grandChildIds = children.flatMap(c => collectChildIds(c.id))
+        return [...childIds, ...grandChildIds]
+      }
+      
+      const idsToDelete = [ctx.id, ...collectChildIds(ctx.id)]
+      
+      update(s => ({ 
+        ...s, 
+        tasks: s.tasks.filter(t => !idsToDelete.includes(t.id)) 
+      }))
     }
     closeModal()
   }

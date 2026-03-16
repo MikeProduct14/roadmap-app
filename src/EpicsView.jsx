@@ -21,6 +21,9 @@ function ArtIcon({ type }) {
 
 function TaskRow({ task, isSub, onEdit, onAddSub, onDragStart, onDragOver, onDrop, isDragging }) {
   const [isHovering, setIsHovering] = React.useState(false)
+  
+  // Check if deadline is overdue
+  const isOverdue = task.deadline && task.status !== 'done' && new Date(task.deadline) < new Date()
 
   return (
     <tr 
@@ -38,6 +41,7 @@ function TaskRow({ task, isSub, onEdit, onAddSub, onDragStart, onDragOver, onDro
       onDrop={(e) => onDrop(e, task)}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
+      data-task-id={task.id}
     >
       <td style={{ padding: '10px 16px', paddingLeft: isSub ? 40 : 16, width: '40%' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
@@ -58,14 +62,21 @@ function TaskRow({ task, isSub, onEdit, onAddSub, onDragStart, onDragOver, onDro
           <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => onEdit(task)}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
               {isSub && <span style={{ fontSize: 11, color: 'var(--tx3)' }}>↳</span>}
-              <span style={{ fontSize: 14, color: 'var(--tx)' }}>{task.name}</span>
+              <span style={{ 
+                fontSize: 14, 
+                color: 'var(--tx)', 
+                overflow: 'hidden', 
+                textOverflow: 'ellipsis', 
+                whiteSpace: 'nowrap',
+                flex: 1
+              }}>{task.name}</span>
               {task.artifacts?.length > 0 && (
-                <span style={{ fontSize: 11, color: 'var(--tx3)' }} title={task.artifacts.map(a => a.name).join(', ')}>
+                <span style={{ fontSize: 11, color: 'var(--tx3)', flexShrink: 0 }} title={task.artifacts.map(a => a.name).join(', ')}>
                   📎{task.artifacts.length}
                 </span>
               )}
               {task.comments?.length > 0 && (
-                <span style={{ fontSize: 11, color: 'var(--tx3)' }} title={`${task.comments.length} комментариев`}>
+                <span style={{ fontSize: 11, color: 'var(--tx3)', flexShrink: 0 }} title={`${task.comments.length} комментариев`}>
                   💬{task.comments.length}
                 </span>
               )}
@@ -89,7 +100,10 @@ function TaskRow({ task, isSub, onEdit, onAddSub, onDragStart, onDragOver, onDro
       <td style={{ padding: '10px 16px', width: '8%' }}>
         <span style={{ fontSize: 11, padding: '3px 7px', borderRadius: 5, background: 'var(--bg2)', color: 'var(--tx3)', fontWeight: 500 }}>{task.effort}</span>
       </td>
-      <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--tx3)', width: '12%' }}>{task.deadline || '—'}</td>
+      <td style={{ padding: '10px 16px', fontSize: 12, color: isOverdue ? '#E24B4A' : 'var(--tx3)', width: '12%', fontWeight: isOverdue ? 600 : 400 }}>
+        {task.deadline || '—'}
+        {isOverdue && ' ⚠️'}
+      </td>
       {!isSub && (
         <td style={{ padding: '10px 16px', width: '8%' }}>
           <button 
@@ -119,6 +133,7 @@ export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTa
   const [collapsed, setCollapsed] = useState({})
   const [draggedEpic, setDraggedEpic] = useState(null)
   const [draggedTask, setDraggedTask] = useState(null)
+  const [hoveringEpic, setHoveringEpic] = useState(null)
 
   const toggle = id => setCollapsed(c => ({ ...c, [id]: !c[id] }))
 
@@ -153,8 +168,22 @@ export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTa
 
   const handleTaskDragOver = (e) => {
     e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
     e.stopPropagation()
+    
+    // Visual feedback: check if drop is allowed
+    if (draggedTask) {
+      const targetElement = e.currentTarget
+      const targetTask = tasks.find(t => {
+        // Find task by checking if element contains task data
+        return targetElement.querySelector(`[data-task-id="${t.id}"]`) !== null
+      })
+      
+      if (targetTask && draggedTask.epicId === targetTask.epicId && draggedTask.parentId === targetTask.parentId) {
+        e.dataTransfer.dropEffect = 'move'
+      } else {
+        e.dataTransfer.dropEffect = 'none'
+      }
+    }
   }
 
   const handleTaskDrop = (e, targetTask) => {
@@ -180,15 +209,27 @@ export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTa
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '1.2rem', flexWrap: 'wrap' }}>
         <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--tx)', flex: 1 }}>Эпики</span>
         <button onClick={onAddEpic} style={{ fontSize: 13, padding: '7px 14px', borderRadius: 7, border: '1px solid var(--bd2)', background: 'var(--bg2)', color: 'var(--tx)', cursor: 'pointer', fontWeight: 500 }}>+ Эпик</button>
-        <button onClick={onAddTask} style={{ fontSize: 13, padding: '7px 14px', borderRadius: 7, border: 'none', background: 'var(--tx)', color: 'var(--bg)', cursor: 'pointer', fontWeight: 600 }}>+ Задача</button>
+        <button 
+          onClick={() => {
+            if (epics.length === 0) {
+              alert('Сначала создайте эпик')
+              return
+            }
+            onAddTask()
+          }} 
+          style={{ fontSize: 13, padding: '7px 14px', borderRadius: 7, border: 'none', background: 'var(--tx)', color: 'var(--bg)', cursor: 'pointer', fontWeight: 600, opacity: epics.length === 0 ? 0.5 : 1 }}
+        >
+          + Задача
+        </button>
       </div>
 
       {epics.map(ep => {
         const rootTasks = tasks.filter(t => t.epicId === ep.id && !t.parentId)
-        const allDone = tasks.filter(t => t.epicId === ep.id && !t.parentId && t.status === 'done').length
-        const prog = rootTasks.length ? Math.round(allDone / rootTasks.length * 100) : 0
+        const allEpicTasks = tasks.filter(t => t.epicId === ep.id)
+        const allDone = allEpicTasks.filter(t => t.status === 'done').length
+        const prog = allEpicTasks.length ? Math.round(allDone / allEpicTasks.length * 100) : 0
         const open = !collapsed[ep.id]
-        const [isHoveringEpic, setIsHoveringEpic] = React.useState(false)
+        const isHoveringEpic = hoveringEpic === ep.id
 
         return (
           <div 
@@ -206,8 +247,8 @@ export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTa
             onDragStart={(e) => handleEpicDragStart(e, ep)}
             onDragOver={handleEpicDragOver}
             onDrop={(e) => handleEpicDrop(e, ep)}
-            onMouseEnter={() => setIsHoveringEpic(true)}
-            onMouseLeave={() => setIsHoveringEpic(false)}
+            onMouseEnter={() => setHoveringEpic(ep.id)}
+            onMouseLeave={() => setHoveringEpic(null)}
           >
             <div
               style={{ 
