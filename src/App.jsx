@@ -7,11 +7,13 @@ import EpicsView from './EpicsView.jsx'
 import GanttView from './GanttView.jsx'
 import SettingsView from './SettingsView.jsx'
 import SprintReview from './SprintReview.jsx'
+import RetroView from './RetroView.jsx'
 
 const TABS = [
   { id: 'epics', label: '📋 Доска' },
   { id: 'gantt', label: '📊 Гант' },
   { id: 'sprint', label: '🎯 Ревью' },
+  { id: 'retro', label: '🔄 Ретро' },
   { id: 'settings', label: '⚙️ Настройки' },
 ]
 
@@ -199,7 +201,7 @@ export default function App() {
   }
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '1.5rem 1rem' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '1.5rem 1rem', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -258,6 +260,35 @@ export default function App() {
           onSave={handleSaveSettings}
         />
       )}
+      {tab === 'retro' && (
+        <RetroView />
+      )}
+
+      {/* Footer */}
+      <div style={{ 
+        marginTop: 'auto', 
+        paddingTop: '3rem', 
+        paddingBottom: '1rem', 
+        textAlign: 'center', 
+        fontSize: 11, 
+        color: 'var(--tx3)',
+        borderTop: '0.5px solid var(--bd)',
+        marginLeft: '-1rem',
+        marginRight: '-1rem',
+        paddingLeft: '1rem',
+        paddingRight: '1rem'
+      }}>
+        Developed by{' '}
+        <a 
+          href="https://vibecodify.ru" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          style={{ color: 'var(--tx2)', textDecoration: 'none', fontWeight: 500 }}
+        >
+          vibecodify.ru
+        </a>
+        {' '}studio, founded by Mikhail Eroshnikin
+      </div>
 
       {/* Modal */}
       {modal && (

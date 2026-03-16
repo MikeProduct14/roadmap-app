@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { STATUS_LABELS, PRIO_LABELS } from './store.js'
+import { STATUS_LABELS, PRIO_LABELS, SPRINTS } from './store.js'
 
 const PRIO_COLORS = { critical: '#E24B4A', high: '#EF9F27', medium: '#378ADD', low: '#888780' }
 const STATUS_BG = { backlog: '#F1EFE8', ready: '#FAEEDA', wip: '#E6F1FB', done: '#EAF3DE', frozen: '#FCEBEB' }
@@ -68,9 +68,12 @@ function TaskRow({ task, isSub, onEdit, onAddSub, onDragStart, onDragOver, onDro
                 color: 'var(--tx)', 
                 overflow: 'hidden', 
                 textOverflow: 'ellipsis', 
-                whiteSpace: 'nowrap',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
                 flex: 1,
-                fontWeight: 500
+                fontWeight: 500,
+                lineHeight: 1.4
               }}>{task.name}</span>
               {task.artifacts?.length > 0 && (
                 <span style={{ fontSize: 10, color: 'var(--tx3)', flexShrink: 0 }} title={task.artifacts.map(a => a.name).join(', ')}>
@@ -149,6 +152,7 @@ export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTa
   const [draggedEpic, setDraggedEpic] = useState(null)
   const [draggedTask, setDraggedTask] = useState(null)
   const [hoveringEpic, setHoveringEpic] = useState(null)
+  const [sprintFilter, setSprintFilter] = useState('all')
 
   const toggle = id => setCollapsed(c => ({ ...c, [id]: !c[id] }))
 
@@ -223,6 +227,26 @@ export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTa
     <div style={{ padding: '0 0 2rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '1.2rem', flexWrap: 'wrap' }}>
         <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--tx)', flex: 1 }}>Эпики</span>
+        
+        <select 
+          value={sprintFilter} 
+          onChange={e => setSprintFilter(e.target.value)}
+          style={{ 
+            fontSize: 12, 
+            padding: '6px 10px', 
+            borderRadius: 6, 
+            border: '1px solid var(--bd2)', 
+            background: 'var(--bg2)', 
+            color: 'var(--tx2)',
+            cursor: 'pointer'
+          }}
+        >
+          <option value="all">Все спринты</option>
+          {SPRINTS.map(sp => (
+            <option key={sp} value={sp}>{sp}</option>
+          ))}
+        </select>
+        
         <button onClick={onAddEpic} style={{ fontSize: 13, padding: '7px 14px', borderRadius: 7, border: '1px solid var(--bd2)', background: 'var(--bg2)', color: 'var(--tx)', cursor: 'pointer', fontWeight: 500 }}>+ Эпик</button>
         <button 
           onClick={() => {
@@ -238,7 +262,7 @@ export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTa
         </button>
       </div>
 
-      {epics.map(ep => {
+      {epics.filter(ep => sprintFilter === 'all' || ep.sprint === sprintFilter).map(ep => {
         const rootTasks = tasks.filter(t => t.epicId === ep.id && !t.parentId)
         const allEpicTasks = tasks.filter(t => t.epicId === ep.id)
         const allDone = allEpicTasks.filter(t => t.status === 'done').length
