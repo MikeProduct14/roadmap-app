@@ -9,15 +9,15 @@ const SEED_EPICS = [
 ]
 
 const SEED_TASKS = [
-  { id: 't1', epicId: 'e1', parentId: null, name: 'Figma макет главной', status: 'done', priority: 'high', sprint: 'Sprint 1', effort: 'M', deadline: '2026-03-18', notes: '', artifacts: [{ type: 'link', name: 'Figma', url: 'https://figma.com' }] },
-  { id: 't2', epicId: 'e1', parentId: 't1', name: 'Утвердить с ментором', status: 'done', priority: 'medium', sprint: 'Sprint 1', effort: 'S', deadline: '2026-03-19', notes: '', artifacts: [] },
-  { id: 't3', epicId: 'e1', parentId: null, name: 'Верстка React + Vite', status: 'wip', priority: 'critical', sprint: 'Sprint 1', effort: 'L', deadline: '2026-03-28', notes: '', artifacts: [{ type: 'doc', name: 'Бриф.docx', url: '' }] },
-  { id: 't4', epicId: 'e1', parentId: 't3', name: 'Компонент Hero секции', status: 'wip', priority: 'high', sprint: 'Sprint 1', effort: 'S', deadline: '2026-03-22', notes: '', artifacts: [] },
-  { id: 't5', epicId: 'e1', parentId: 't3', name: 'Компонент кейсов', status: 'ready', priority: 'medium', sprint: 'Sprint 1', effort: 'M', deadline: '2026-03-26', notes: '', artifacts: [] },
-  { id: 't6', epicId: 'e2', parentId: null, name: 'Контент-план апрель', status: 'wip', priority: 'high', sprint: 'Sprint 1', effort: 'M', deadline: '2026-03-25', notes: '', artifacts: [{ type: 'doc', name: 'КП_апрель.docx', url: '' }] },
-  { id: 't7', epicId: 'e2', parentId: 't6', name: 'Темы для Reels', status: 'ready', priority: 'medium', sprint: 'Sprint 1', effort: 'S', deadline: '2026-03-23', notes: '', artifacts: [] },
-  { id: 't8', epicId: 'e3', parentId: null, name: 'Программа курса', status: 'backlog', priority: 'high', sprint: 'Sprint 2', effort: 'L', deadline: '2026-04-15', notes: '', artifacts: [{ type: 'pdf', name: 'Программа.pdf', url: '' }] },
-  { id: 't9', epicId: 'e4', parentId: null, name: 'PRD трекера', status: 'backlog', priority: 'medium', sprint: 'Sprint 3', effort: 'M', deadline: '2026-05-10', notes: '', artifacts: [] },
+  { id: 't1', epicId: 'e1', parentId: null, name: 'Figma макет главной', status: 'done', priority: 'high', sprint: 'Sprint 1', effort: 'M', deadline: '2026-03-18', description: '', comments: [], artifacts: [{ type: 'link', name: 'Figma', url: 'https://figma.com' }] },
+  { id: 't2', epicId: 'e1', parentId: 't1', name: 'Утвердить с ментором', status: 'done', priority: 'medium', sprint: 'Sprint 1', effort: 'S', deadline: '2026-03-19', description: '', comments: [], artifacts: [] },
+  { id: 't3', epicId: 'e1', parentId: null, name: 'Верстка React + Vite', status: 'wip', priority: 'critical', sprint: 'Sprint 1', effort: 'L', deadline: '2026-03-28', description: '', comments: [], artifacts: [{ type: 'doc', name: 'Бриф.docx', url: '' }] },
+  { id: 't4', epicId: 'e1', parentId: 't3', name: 'Компонент Hero секции', status: 'wip', priority: 'high', sprint: 'Sprint 1', effort: 'S', deadline: '2026-03-22', description: '', comments: [], artifacts: [] },
+  { id: 't5', epicId: 'e1', parentId: 't3', name: 'Компонент кейсов', status: 'ready', priority: 'medium', sprint: 'Sprint 1', effort: 'M', deadline: '2026-03-26', description: '', comments: [], artifacts: [] },
+  { id: 't6', epicId: 'e2', parentId: null, name: 'Контент-план апрель', status: 'wip', priority: 'high', sprint: 'Sprint 1', effort: 'M', deadline: '2026-03-25', description: '', comments: [], artifacts: [{ type: 'doc', name: 'КП_апрель.docx', url: '' }] },
+  { id: 't7', epicId: 'e2', parentId: 't6', name: 'Темы для Reels', status: 'ready', priority: 'medium', sprint: 'Sprint 1', effort: 'S', deadline: '2026-03-23', description: '', comments: [], artifacts: [] },
+  { id: 't8', epicId: 'e3', parentId: null, name: 'Программа курса', status: 'backlog', priority: 'high', sprint: 'Sprint 2', effort: 'L', deadline: '2026-04-15', description: '', comments: [], artifacts: [{ type: 'pdf', name: 'Программа.pdf', url: '' }] },
+  { id: 't9', epicId: 'e4', parentId: null, name: 'PRD трекера', status: 'backlog', priority: 'medium', sprint: 'Sprint 3', effort: 'M', deadline: '2026-05-10', description: '', comments: [], artifacts: [] },
 ]
 
 // localStorage fallback

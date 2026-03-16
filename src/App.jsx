@@ -107,6 +107,27 @@ export default function App() {
     closeModal()
   }
 
+  const handleReorderEpics = (fromIndex, toIndex) => {
+    update(s => {
+      const newEpics = [...s.epics]
+      const [moved] = newEpics.splice(fromIndex, 1)
+      newEpics.splice(toIndex, 0, moved)
+      return { ...s, epics: newEpics }
+    })
+  }
+
+  const handleReorderTasks = (epicId, parentId, fromIndex, toIndex) => {
+    update(s => {
+      const epicTasks = s.tasks.filter(t => t.epicId === epicId && t.parentId === parentId)
+      const otherTasks = s.tasks.filter(t => t.epicId !== epicId || t.parentId !== parentId)
+      
+      const [moved] = epicTasks.splice(fromIndex, 1)
+      epicTasks.splice(toIndex, 0, moved)
+      
+      return { ...s, tasks: [...otherTasks, ...epicTasks] }
+    })
+  }
+
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '1.5rem 1rem' }}>
       {/* Header */}
@@ -147,6 +168,8 @@ export default function App() {
           onAddTask={ep => setModal({ mode: 'task', ctx: { epicId: ep?.id || epics[0]?.id, parentId: null, sprint: ep?.sprint || 'Sprint 1' } })}
           onEditTask={t => setModal({ mode: 'task-edit', ctx: t })}
           onAddSub={t => setModal({ mode: 'task', ctx: { epicId: t.epicId, parentId: t.id, sprint: t.sprint } })}
+          onReorderEpics={handleReorderEpics}
+          onReorderTasks={handleReorderTasks}
         />
       )}
       {tab === 'gantt' && (

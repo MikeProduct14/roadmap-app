@@ -3,20 +3,25 @@ import { SPRINTS, EPIC_COLORS, STATUS_LABELS, PRIO_LABELS, EFFORT_LABELS, SPHERE
 
 const s = {
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 40, zIndex: 300 },
-  modal: { background: 'var(--bg)', border: '0.5px solid var(--bd2)', borderRadius: 'var(--radius)', width: '100%', maxWidth: 520, maxHeight: '85vh', overflowY: 'auto', padding: '20px 22px', position: 'relative' },
-  h: { fontSize: 15, fontWeight: 600, marginBottom: 16, color: 'var(--tx)' },
-  label: { display: 'block', fontSize: 11, color: 'var(--tx2)', marginBottom: 3, fontWeight: 500 },
-  input: { width: '100%', fontSize: 13, padding: '6px 10px', borderRadius: 6, border: '0.5px solid var(--bd2)', background: 'var(--bg2)', color: 'var(--tx)' },
-  row: { marginBottom: 10 },
-  grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 },
-  footer: { display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16, paddingTop: 12, borderTop: '0.5px solid var(--bd)' },
-  btn: { fontSize: 12, padding: '6px 14px', borderRadius: 6, border: '0.5px solid var(--bd2)', background: 'var(--bg2)', color: 'var(--tx)', cursor: 'pointer', fontFamily: 'inherit' },
-  btnPrimary: { fontSize: 12, padding: '6px 14px', borderRadius: 6, border: 'none', background: 'var(--tx)', color: 'var(--bg)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500 },
-  closeX: { position: 'absolute', right: 12, top: 12, background: 'none', border: 'none', fontSize: 18, color: 'var(--tx3)', cursor: 'pointer', lineHeight: 1 },
-  artRow: { display: 'flex', gap: 5, alignItems: 'center', marginBottom: 5 },
-  artRm: { background: 'none', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 15, padding: '0 2px' },
-  addArt: { fontSize: 11, color: 'var(--tx2)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2, fontFamily: 'inherit' },
-  deleteBtn: { fontSize: 12, padding: '6px 14px', borderRadius: 6, border: '0.5px solid #E24B4A', background: 'transparent', color: '#E24B4A', cursor: 'pointer', fontFamily: 'inherit', marginRight: 'auto' },
+  modal: { background: 'var(--bg)', border: '0.5px solid var(--bd2)', borderRadius: 'var(--radius)', width: '100%', maxWidth: 560, maxHeight: '85vh', overflowY: 'auto', padding: '24px 26px', position: 'relative' },
+  h: { fontSize: 17, fontWeight: 600, marginBottom: 20, color: 'var(--tx)' },
+  label: { display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 6, fontWeight: 500 },
+  input: { width: '100%', fontSize: 14, padding: '9px 12px', borderRadius: 7, border: '1px solid var(--bd2)', background: 'var(--bg2)', color: 'var(--tx)' },
+  row: { marginBottom: 14 },
+  grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 },
+  footer: { display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20, paddingTop: 16, borderTop: '0.5px solid var(--bd)' },
+  btn: { fontSize: 13, padding: '9px 18px', borderRadius: 7, border: '1px solid var(--bd2)', background: 'var(--bg2)', color: 'var(--tx)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500 },
+  btnPrimary: { fontSize: 13, padding: '9px 18px', borderRadius: 7, border: 'none', background: 'var(--tx)', color: 'var(--bg)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 },
+  closeX: { position: 'absolute', right: 16, top: 16, background: 'none', border: 'none', fontSize: 22, color: 'var(--tx3)', cursor: 'pointer', lineHeight: 1, padding: 4 },
+  artRow: { display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 },
+  artRm: { background: 'none', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 18, padding: '4px 6px', minWidth: 32, minHeight: 32 },
+  addArt: { fontSize: 12, color: 'var(--tx2)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2, fontFamily: 'inherit', padding: '6px 0', marginTop: 4 },
+  deleteBtn: { fontSize: 13, padding: '9px 18px', borderRadius: 7, border: '1px solid #E24B4A', background: 'transparent', color: '#E24B4A', cursor: 'pointer', fontFamily: 'inherit', marginRight: 'auto', fontWeight: 500 },
+  commentBox: { background: 'var(--bg2)', padding: 12, borderRadius: 7, marginBottom: 8, border: '1px solid var(--bd)' },
+  commentHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  commentDate: { fontSize: 11, color: 'var(--tx3)' },
+  commentText: { fontSize: 13, color: 'var(--tx)', lineHeight: 1.5, whiteSpace: 'pre-wrap' },
+  addCommentBtn: { fontSize: 12, padding: '6px 12px', borderRadius: 6, border: '1px solid var(--bd2)', background: 'var(--bg2)', color: 'var(--tx2)', cursor: 'pointer', fontFamily: 'inherit', marginTop: 6 },
 }
 
 function Field({ label, children }) {
@@ -41,15 +46,51 @@ function ArtifactEditor({ arts, onChange }) {
       <label style={s.label}>Артефакты (PDF, DOCX, ссылки)</label>
       {arts.map((a, i) => (
         <div key={i} style={s.artRow}>
-          <select value={a.type} onChange={e => upd(i, 'type', e.target.value)} style={{ ...s.input, width: 65, fontSize: 11, padding: '5px 4px' }}>
+          <select value={a.type} onChange={e => upd(i, 'type', e.target.value)} style={{ ...s.input, width: 70, fontSize: 12, padding: '7px 6px' }}>
             {ART_TYPES.map(t => <option key={t} value={t}>{t.toUpperCase()}</option>)}
           </select>
-          <input value={a.name} onChange={e => upd(i, 'name', e.target.value)} placeholder="Название" style={{ ...s.input, flex: 1, fontSize: 11 }} />
-          <input value={a.url || ''} onChange={e => upd(i, 'url', e.target.value)} placeholder="Ссылка (опц.)" style={{ ...s.input, flex: 1, fontSize: 11 }} />
-          <button style={s.artRm} onClick={() => rm(i)}>×</button>
+          <input value={a.name} onChange={e => upd(i, 'name', e.target.value)} placeholder="Название" style={{ ...s.input, flex: 1, fontSize: 12 }} />
+          <input value={a.url || ''} onChange={e => upd(i, 'url', e.target.value)} placeholder="Ссылка (опц.)" style={{ ...s.input, flex: 1, fontSize: 12 }} />
+          <button style={s.artRm} onClick={() => rm(i)} title="Удалить">×</button>
         </div>
       ))}
       <button style={s.addArt} onClick={add}>+ Добавить артефакт</button>
+    </div>
+  )
+}
+
+function CommentsSection({ comments, onChange }) {
+  const [newComment, setNewComment] = useState('')
+
+  const addComment = () => {
+    if (!newComment.trim()) return
+    onChange([...comments, { text: newComment, date: new Date().toISOString() }])
+    setNewComment('')
+  }
+
+  const removeComment = (i) => {
+    onChange(comments.filter((_, j) => j !== i))
+  }
+
+  return (
+    <div style={s.row}>
+      <label style={s.label}>Комментарии</label>
+      {comments.map((c, i) => (
+        <div key={i} style={s.commentBox}>
+          <div style={s.commentHeader}>
+            <span style={s.commentDate}>{new Date(c.date).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+            <button style={{ ...s.artRm, fontSize: 16 }} onClick={() => removeComment(i)} title="Удалить">×</button>
+          </div>
+          <div style={s.commentText}>{c.text}</div>
+        </div>
+      ))}
+      <textarea 
+        value={newComment} 
+        onChange={e => setNewComment(e.target.value)} 
+        placeholder="Добавить комментарий..." 
+        style={{ ...s.input, minHeight: 60, resize: 'vertical', marginBottom: 6 }} 
+      />
+      <button style={s.addCommentBtn} onClick={addComment}>Добавить комментарий</button>
     </div>
   )
 }
@@ -65,8 +106,28 @@ export default function Modal({ mode, ctx, onSave, onDelete, onClose }) {
         : { name: '', color: EPIC_COLORS[0], sprint: 'Sprint 1', startW: 0, durW: 2 }
     } else {
       return ctx && mode === 'task-edit'
-        ? { name: ctx.name, status: ctx.status, priority: ctx.priority, sprint: ctx.sprint, effort: ctx.effort, deadline: ctx.deadline || '', notes: ctx.notes || '', artifacts: JSON.parse(JSON.stringify(ctx.artifacts || [])) }
-        : { name: '', status: 'backlog', priority: 'medium', sprint: ctx?.sprint || 'Sprint 1', effort: 'M', deadline: '', notes: '', artifacts: [] }
+        ? { 
+            name: ctx.name, 
+            status: ctx.status, 
+            priority: ctx.priority, 
+            sprint: ctx.sprint, 
+            effort: ctx.effort, 
+            deadline: ctx.deadline || '', 
+            description: ctx.description || ctx.notes || '', 
+            artifacts: JSON.parse(JSON.stringify(ctx.artifacts || [])),
+            comments: ctx.comments || []
+          }
+        : { 
+            name: '', 
+            status: 'backlog', 
+            priority: 'medium', 
+            sprint: ctx?.sprint || 'Sprint 1', 
+            effort: 'M', 
+            deadline: '', 
+            description: '', 
+            artifacts: [],
+            comments: []
+          }
     }
   })
 
@@ -113,8 +174,16 @@ export default function Modal({ mode, ctx, onSave, onDelete, onClose }) {
               <Field label="Усилие"><Sel value={form.effort} onChange={v => set('effort', v)} options={Object.entries(EFFORT_LABELS)} /></Field>
             </div>
             <Field label="Дедлайн"><input type="date" value={form.deadline} onChange={e => set('deadline', e.target.value)} style={s.input} /></Field>
-            <Field label="Заметки"><textarea value={form.notes} onChange={e => set('notes', e.target.value)} style={{ ...s.input, minHeight: 56, resize: 'vertical' }} /></Field>
+            <Field label="Описание">
+              <textarea 
+                value={form.description} 
+                onChange={e => set('description', e.target.value)} 
+                style={{ ...s.input, minHeight: form.description.length > 100 ? 120 : 70, resize: 'vertical' }} 
+                placeholder="Подробное описание задачи..."
+              />
+            </Field>
             <ArtifactEditor arts={form.artifacts} onChange={v => set('artifacts', v)} />
+            <CommentsSection comments={form.comments} onChange={v => set('comments', v)} />
           </>
         )}
 
