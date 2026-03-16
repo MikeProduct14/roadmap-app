@@ -1,3 +1,5 @@
+import { supabase, isSupabaseConfigured } from './supabase.js'
+
 // Initial seed data
 const SEED_EPICS = [
   { id: 'e1', name: 'Личный сайт / портфолио', color: '#378ADD', sprint: 'Sprint 1', startW: 0, durW: 3 },
@@ -18,6 +20,7 @@ const SEED_TASKS = [
   { id: 't9', epicId: 'e4', parentId: null, name: 'PRD трекера', status: 'backlog', priority: 'medium', sprint: 'Sprint 3', effort: 'M', deadline: '2026-05-10', notes: '', artifacts: [] },
 ]
 
+// localStorage fallback
 function load(key, fallback) {
   try {
     const raw = localStorage.getItem(key)
@@ -27,6 +30,55 @@ function load(key, fallback) {
 
 function save(key, val) {
   try { localStorage.setItem(key, JSON.stringify(val)) } catch {}
+}
+
+// Supabase functions
+export async function loadStateFromSupabase(userId) {
+  if (!isSupabaseConfigured()) return null
+
+  try {
+    const { data, error } = await supabase
+      .from('roadmaps')
+      .select('*')
+      .eq('user_id', userId)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') return null // No data yet
+      throw error
+    }
+
+    return {
+      epics: data.epics || [],
+      tasks: data.tasks || [],
+      nextEpicId: data.next_epic_id || 1,
+      nextTaskId: data.next_task_id || 1,
+    }
+  } catch (err) {
+    console.error('Error loading from Supabase:', err)
+    return null
+  }
+}
+
+export async function saveStateToSupabase(userId, state) {
+  if (!isSupabaseConfigured()) return
+
+  try {
+    const { error } = await supabase
+      .from('roadmaps')
+      .upsert({
+        user_id: userId,
+        epics: state.epics,
+        tasks: state.tasks,
+        next_epic_id: state.nextEpicId,
+        next_task_id: state.nextTaskId,
+        updated_at: new Date().toISOString()
+      })
+
+    if (error) throw error
+  } catch (err) {
+    console.error('Error saving to Supabase:', err)
+  }
 }
 
 export function loadState() {

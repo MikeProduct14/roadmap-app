@@ -1,5 +1,7 @@
-import React, { useState, useCallback } from 'react'
-import { loadState, saveState } from './store.js'
+import React, { useState, useCallback, useEffect } from 'react'
+import { loadState, saveState, loadStateFromSupabase, saveStateToSupabase } from './store.js'
+import { isSupabaseConfigured } from './supabase.js'
+import Auth from './Auth.jsx'
 import Modal from './Modal.jsx'
 import EpicsView from './EpicsView.jsx'
 import GanttView from './GanttView.jsx'
@@ -9,26 +11,65 @@ const TABS = [
   { id: 'gantt', label: 'Гант' },
 ]
 
-function useStore() {
+function useStore(user) {
   const [state, setState] = useState(() => loadState())
+  const [loading, setLoading] = useState(true)
+
+  // Load from Supabase when user logs in
+  useEffect(() => {
+    if (user && isSupabaseConfigured()) {
+      loadStateFromSupabase(user.id).then(data => {
+        if (data) {
+          setState(data)
+          saveState(data) // Sync to localStorage
+        }
+        setLoading(false)
+      })
+    } else {
+      setLoading(false)
+    }
+  }, [user])
 
   const update = useCallback(updater => {
     setState(prev => {
       const next = updater(prev)
-      saveState(next)
+      saveState(next) // Always save to localStorage
+      if (user && isSupabaseConfigured()) {
+        saveStateToSupabase(user.id, next) // Also save to Supabase
+      }
       return next
     })
-  }, [])
+  }, [user])
 
-  return { state, update }
+  return { state, update, loading }
 }
 
 export default function App() {
-  const { state, update } = useStore()
+  const [user, setUser] = useState(null)
+  const { state, update, loading } = useStore(user)
   const { epics, tasks, nextEpicId, nextTaskId } = state
 
   const [tab, setTab] = useState('epics')
   const [modal, setModal] = useState(null) // { mode, ctx }
+
+  // Show auth screen if Supabase is configured but user is not logged in
+  if (isSupabaseConfigured() && !user) {
+    return <Auth onAuth={setUser} />
+  }
+
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        height: '100vh',
+        color: 'var(--tx2)'
+      }}>
+        Загрузка...
+      </div>
+    )
+  }
 
   const closeModal = () => setModal(null)
 
@@ -70,10 +111,13 @@ export default function App() {
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '1.5rem 1rem' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: 22, fontWeight: 600, color: 'var(--tx)' }}>Roadmap</h1>
-        <span style={{ fontSize: 12, color: 'var(--tx3)' }}>
-          {epics.length} эпиков · {tasks.length} задач
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 600, color: 'var(--tx)' }}>Roadmap</h1>
+          <span style={{ fontSize: 12, color: 'var(--tx3)' }}>
+            {epics.length} эпиков · {tasks.length} задач
+          </span>
+        </div>
+        {user && <Auth onAuth={setUser} />}
       </div>
 
       {/* Tabs */}

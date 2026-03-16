@@ -4,63 +4,44 @@
 
 ## Стек
 - **React 18 + Vite** — быстрая разработка
-- **localStorage** — хранение данных в браузере (без бэкенда)
-- **nginx** — деплой на сервер
+- **Supabase** — база данных PostgreSQL + OAuth авторизация
+- **localStorage** — локальный fallback (работает без интернета)
 
 ---
 
-## Разработка локально
+## 🚀 Быстрый старт
+
+### Вариант 1: Без авторизации (только localStorage)
 
 ```bash
-# Установить зависимости
 npm install
-
-# Запустить dev-сервер
 npm run dev
-# → http://localhost:5173
 ```
+
+Данные сохраняются только в браузере.
+
+### Вариант 2: С авторизацией и облачной БД
+
+1. Следуй инструкции в **[SUPABASE_SETUP.md](./SUPABASE_SETUP.md)**
+2. Создай `.env` файл с ключами Supabase
+3. Запусти проект:
+
+```bash
+npm install
+npm run dev
+```
+
+Данные синхронизируются между устройствами!
 
 ---
 
-## Деплой на сервер
+## Деплой на GitHub Pages
 
-### 1. Собери проект
-```bash
-npm run build
-# Создаст папку dist/
-```
+Подробная инструкция в **[DEPLOY.md](./DEPLOY.md)**
 
-### 2. Загрузи файлы на сервер
-```bash
-# Через scp
-scp -r dist/* user@yourserver.com:/var/www/roadmap-app/
-
-# Или через rsync
-rsync -avz dist/ user@yourserver.com:/var/www/roadmap-app/
-```
-
-### 3. Настрой nginx
-```bash
-# Скопируй конфиг
-sudo cp nginx.conf /etc/nginx/sites-available/roadmap
-sudo ln -s /etc/nginx/sites-available/roadmap /etc/nginx/sites-enabled/
-
-# Отредактируй server_name в конфиге
-sudo nano /etc/nginx/sites-available/roadmap
-
-# Создай папку и дай права
-sudo mkdir -p /var/www/roadmap-app
-sudo chown -R www-data:www-data /var/www/roadmap-app
-
-# Перезапусти nginx
-sudo nginx -t && sudo systemctl reload nginx
-```
-
-### 4. SSL (опционально, через Certbot)
-```bash
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d yourdomain.com
-```
+Если используешь Supabase, не забудь:
+1. Добавить секреты в GitHub (Settings → Secrets)
+2. Обновить redirect URLs в OAuth провайдерах
 
 ---
 
