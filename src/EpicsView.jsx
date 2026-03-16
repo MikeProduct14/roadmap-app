@@ -107,40 +107,38 @@ function TaskRow({ task, isSub, onEdit, onAddSub, onDragStart, onDragOver, onDro
                 ))}
               </div>
             )}
+            {!isSub && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); onAddSub(task); }} 
+                style={{ 
+                  fontSize: 10, 
+                  padding: '3px 8px', 
+                  borderRadius: 4, 
+                  border: '1px solid var(--bd2)', 
+                  background: 'transparent', 
+                  color: 'var(--tx3)', 
+                  cursor: 'pointer',
+                  marginTop: 6,
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                + подзадача
+              </button>
+            )}
           </div>
         </div>
       </td>
-      <td style={{ padding: '10px 16px', width: '12%' }}><Badge status={task.status} /></td>
-      <td style={{ padding: '10px 16px', width: '8%' }}><PrioDot priority={task.priority} /></td>
-      <td style={{ padding: '10px 16px', fontSize: 11, color: 'var(--tx2)', width: '12%' }}>{task.sprint}</td>
-      <td style={{ padding: '10px 16px', width: '8%' }}>
+      <td style={{ padding: '10px 16px', width: '15%' }}><Badge status={task.status} /></td>
+      <td style={{ padding: '10px 16px', width: '10%' }}><PrioDot priority={task.priority} /></td>
+      <td style={{ padding: '10px 16px', fontSize: 11, color: 'var(--tx2)', width: '13%' }}>{task.sprint}</td>
+      <td style={{ padding: '10px 16px', width: '10%' }}>
         <span style={{ fontSize: 10, padding: '3px 7px', borderRadius: 5, background: 'var(--bg2)', color: 'var(--tx3)', fontWeight: 500 }}>{task.effort}</span>
       </td>
       <td style={{ padding: '10px 16px', fontSize: 11, color: isOverdue ? '#E24B4A' : 'var(--tx3)', width: '12%', fontWeight: isOverdue ? 600 : 400 }}>
         {task.deadline || '—'}
         {isOverdue && ' ⚠️'}
       </td>
-      {!isSub && (
-        <td style={{ padding: '10px 16px', width: '8%' }}>
-          <button 
-            onClick={(e) => { e.stopPropagation(); onAddSub(task); }} 
-            style={{ 
-              fontSize: 11, 
-              padding: '4px 10px', 
-              borderRadius: 5, 
-              border: '1px solid var(--bd2)', 
-              background: 'transparent', 
-              color: 'var(--tx2)', 
-              cursor: 'pointer',
-              minHeight: 28,
-              whiteSpace: 'nowrap'
-            }}
-          >
-            + подзадача
-          </button>
-        </td>
-      )}
-      {isSub && <td style={{ width: '8%' }} />}
+      {isSub && <td style={{ width: '0%' }} />}
     </tr>
   )
 }
@@ -317,12 +315,11 @@ export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTa
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--bd)', background: 'var(--bg)', position: 'sticky', top: 0, zIndex: 10 }}>
                       <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '40%' }}>Задача</th>
-                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '12%' }}>Статус</th>
-                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '8%' }}>Приоритет</th>
-                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '12%' }}>Спринт</th>
-                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '8%' }}>Усилие</th>
+                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '15%' }}>Статус</th>
+                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '10%' }}>Приоритет</th>
+                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '13%' }}>Спринт</th>
+                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '10%' }}>Усилие</th>
                       <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '12%' }}>Дедлайн</th>
-                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '8%' }}></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -354,7 +351,7 @@ export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTa
                       </React.Fragment>
                     ))}
                     {rootTasks.length === 0 && (
-                      <tr><td colSpan={7} style={{ padding: '14px 16px', fontSize: 14, color: 'var(--tx3)', fontStyle: 'italic' }}>Нет задач — добавь первую</td></tr>
+                      <tr><td colSpan={6} style={{ padding: '14px 16px', fontSize: 14, color: 'var(--tx3)', fontStyle: 'italic' }}>Нет задач — добавь первую</td></tr>
                     )}
                   </tbody>
                 </table>
