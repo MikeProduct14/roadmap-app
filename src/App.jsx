@@ -225,6 +225,7 @@ export default function App() {
         <Modal
           mode={modal.mode}
           ctx={modal.ctx}
+          epics={epics}
           onSave={handleSave}
           onDelete={modal.mode === 'epic-edit' || modal.mode === 'task-edit' ? handleDelete : null}
           onClose={closeModal}

@@ -60,27 +60,43 @@ function TaskRow({ task, isSub, onEdit, onAddSub, onDragStart, onDragOver, onDro
             ⋮⋮
           </span>
           <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => onEdit(task)}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-              {isSub && <span style={{ fontSize: 11, color: 'var(--tx3)' }}>↳</span>}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: task.description ? 4 : 0 }}>
+              {isSub && <span style={{ fontSize: 10, color: 'var(--tx3)' }}>↳</span>}
               <span style={{ 
-                fontSize: 14, 
+                fontSize: 13, 
                 color: 'var(--tx)', 
                 overflow: 'hidden', 
                 textOverflow: 'ellipsis', 
                 whiteSpace: 'nowrap',
-                flex: 1
+                flex: 1,
+                fontWeight: 500
               }}>{task.name}</span>
               {task.artifacts?.length > 0 && (
-                <span style={{ fontSize: 11, color: 'var(--tx3)', flexShrink: 0 }} title={task.artifacts.map(a => a.name).join(', ')}>
+                <span style={{ fontSize: 10, color: 'var(--tx3)', flexShrink: 0 }} title={task.artifacts.map(a => a.name).join(', ')}>
                   📎{task.artifacts.length}
                 </span>
               )}
               {task.comments?.length > 0 && (
-                <span style={{ fontSize: 11, color: 'var(--tx3)', flexShrink: 0 }} title={`${task.comments.length} комментариев`}>
+                <span style={{ fontSize: 10, color: 'var(--tx3)', flexShrink: 0 }} title={`${task.comments.length} комментариев`}>
                   💬{task.comments.length}
                 </span>
               )}
             </div>
+            {task.description && (
+              <div style={{ 
+                fontSize: 11, 
+                color: 'var(--tx3)', 
+                marginTop: 2,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                lineHeight: 1.4
+              }}>
+                {task.description}
+              </div>
+            )}
             {task.artifacts?.length > 0 && (
               <div style={{ display: 'flex', gap: 5, marginTop: 5, paddingLeft: isSub ? 18 : 0, flexWrap: 'wrap' }}>
                 {task.artifacts.map((a, i) => (
@@ -96,11 +112,11 @@ function TaskRow({ task, isSub, onEdit, onAddSub, onDragStart, onDragOver, onDro
       </td>
       <td style={{ padding: '10px 16px', width: '12%' }}><Badge status={task.status} /></td>
       <td style={{ padding: '10px 16px', width: '8%' }}><PrioDot priority={task.priority} /></td>
-      <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--tx2)', width: '12%' }}>{task.sprint}</td>
+      <td style={{ padding: '10px 16px', fontSize: 11, color: 'var(--tx2)', width: '12%' }}>{task.sprint}</td>
       <td style={{ padding: '10px 16px', width: '8%' }}>
-        <span style={{ fontSize: 11, padding: '3px 7px', borderRadius: 5, background: 'var(--bg2)', color: 'var(--tx3)', fontWeight: 500 }}>{task.effort}</span>
+        <span style={{ fontSize: 10, padding: '3px 7px', borderRadius: 5, background: 'var(--bg2)', color: 'var(--tx3)', fontWeight: 500 }}>{task.effort}</span>
       </td>
-      <td style={{ padding: '10px 16px', fontSize: 12, color: isOverdue ? '#E24B4A' : 'var(--tx3)', width: '12%', fontWeight: isOverdue ? 600 : 400 }}>
+      <td style={{ padding: '10px 16px', fontSize: 11, color: isOverdue ? '#E24B4A' : 'var(--tx3)', width: '12%', fontWeight: isOverdue ? 600 : 400 }}>
         {task.deadline || '—'}
         {isOverdue && ' ⚠️'}
       </td>
@@ -109,7 +125,7 @@ function TaskRow({ task, isSub, onEdit, onAddSub, onDragStart, onDragOver, onDro
           <button 
             onClick={(e) => { e.stopPropagation(); onAddSub(task); }} 
             style={{ 
-              fontSize: 12, 
+              fontSize: 11, 
               padding: '4px 10px', 
               borderRadius: 5, 
               border: '1px solid var(--bd2)', 

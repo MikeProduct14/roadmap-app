@@ -104,7 +104,7 @@ export const STATUS_LABELS = { backlog: 'Backlog', ready: 'К спринту', w
 export const PRIO_LABELS = { critical: 'Критичный', high: 'Высокий', medium: 'Средний', low: 'Низкий' }
 export const EFFORT_LABELS = { S: 'S — 1-2 ч', M: 'M — полдня', L: 'L — 1-3 дня', XL: 'XL — неделя+' }
 export const SPHERE_LABELS = ['Продукты', 'Личный бренд', 'Обучение', 'Вайбкодинг', 'Контент', 'Операционка']
-export const ART_TYPES = ['pdf', 'doc', 'link']
+export const ART_TYPES = ['link', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'md', 'zip', 'rar', 'jpg', 'png', 'svg', 'figma', 'miro', 'notion', 'gdoc', 'gsheet']
 
 export const GANTT_BASE = new Date('2026-03-10')
 export const GANTT_WEEKS = 16

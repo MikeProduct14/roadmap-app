@@ -3,13 +3,13 @@ import { SPRINTS, EPIC_COLORS, STATUS_LABELS, PRIO_LABELS, EFFORT_LABELS, SPHERE
 
 const s = {
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 40, zIndex: 300 },
-  modal: { background: 'var(--bg)', border: '0.5px solid var(--bd2)', borderRadius: 'var(--radius)', width: '100%', maxWidth: 560, maxHeight: '85vh', overflowY: 'auto', padding: '24px 26px', position: 'relative' },
+  modal: { background: 'var(--bg)', border: '0.5px solid var(--bd2)', borderRadius: 'var(--radius)', width: '100%', maxWidth: 560, maxHeight: '85vh', overflowY: 'auto', padding: '24px 26px 80px 26px', position: 'relative' },
   h: { fontSize: 17, fontWeight: 600, marginBottom: 20, color: 'var(--tx)' },
   label: { display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 6, fontWeight: 500 },
   input: { width: '100%', fontSize: 14, padding: '9px 12px', borderRadius: 7, border: '1px solid var(--bd2)', background: 'var(--bg2)', color: 'var(--tx)' },
   row: { marginBottom: 14 },
   grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 },
-  footer: { display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20, paddingTop: 16, borderTop: '0.5px solid var(--bd)' },
+  footer: { position: 'sticky', bottom: 0, left: 0, right: 0, display: 'flex', justifyContent: 'flex-end', gap: 10, padding: '16px 26px', background: 'var(--bg)', borderTop: '1px solid var(--bd)', marginLeft: -26, marginRight: -26, marginBottom: -80, zIndex: 10 },
   btn: { fontSize: 13, padding: '9px 18px', borderRadius: 7, border: '1px solid var(--bd2)', background: 'var(--bg2)', color: 'var(--tx)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500 },
   btnPrimary: { fontSize: 13, padding: '9px 18px', borderRadius: 7, border: 'none', background: 'var(--tx)', color: 'var(--bg)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 },
   closeX: { position: 'absolute', right: 16, top: 16, background: 'none', border: 'none', fontSize: 22, color: 'var(--tx3)', cursor: 'pointer', lineHeight: 1, padding: 4 },
@@ -80,23 +80,45 @@ function CommentsSection({ comments, onChange }) {
     }
   }
 
+  // Simple markdown renderer
+  const renderMarkdown = (text) => {
+    let html = text
+      // Bold: **text** or __text__
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/__(.+?)__/g, '<strong>$1</strong>')
+      // Italic: *text* or _text_
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/_(.+?)_/g, '<em>$1</em>')
+      // Code: `code`
+      .replace(/`(.+?)`/g, '<code style="background: var(--bg3); padding: 2px 4px; border-radius: 3px; font-size: 12px;">$1</code>')
+      // Links: [text](url)
+      .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #378ADD; text-decoration: underline;">$1</a>')
+      // Line breaks
+      .replace(/\n/g, '<br/>')
+    
+    return html
+  }
+
   return (
     <div style={s.row}>
-      <label style={s.label}>Комментарии</label>
+      <label style={s.label}>Комментарии (поддерживается Markdown)</label>
       {comments.map((c, i) => (
         <div key={i} style={s.commentBox}>
           <div style={s.commentHeader}>
             <span style={s.commentDate}>{new Date(c.date).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
             <button style={{ ...s.artRm, fontSize: 16 }} onClick={() => removeComment(i)} title="Удалить">×</button>
           </div>
-          <div style={s.commentText}>{c.text}</div>
+          <div 
+            style={s.commentText} 
+            dangerouslySetInnerHTML={{ __html: renderMarkdown(c.text) }}
+          />
         </div>
       ))}
       <textarea 
         value={newComment} 
         onChange={e => setNewComment(e.target.value)} 
         onKeyDown={handleKeyDown}
-        placeholder="Добавить комментарий... (Ctrl+Enter для отправки)" 
+        placeholder="Добавить комментарий... (Ctrl+Enter для отправки)&#10;Поддерживается: **жирный**, *курсив*, `код`, [ссылка](url)" 
         style={{ ...s.input, minHeight: 60, resize: 'vertical', marginBottom: 6 }} 
       />
       <button style={s.addCommentBtn} onClick={addComment}>Добавить комментарий</button>
@@ -104,7 +126,7 @@ function CommentsSection({ comments, onChange }) {
   )
 }
 
-export default function Modal({ mode, ctx, onSave, onDelete, onClose }) {
+export default function Modal({ mode, ctx, epics, onSave, onDelete, onClose }) {
   const isEpic = mode === 'epic' || mode === 'epic-edit'
   const isEdit = mode === 'epic-edit' || mode === 'task-edit'
 
@@ -124,7 +146,8 @@ export default function Modal({ mode, ctx, onSave, onDelete, onClose }) {
             deadline: ctx.deadline || '', 
             description: ctx.description || ctx.notes || '', 
             artifacts: JSON.parse(JSON.stringify(ctx.artifacts || [])),
-            comments: ctx.comments || []
+            comments: ctx.comments || [],
+            epicId: ctx.epicId
           }
         : { 
             name: '', 
@@ -135,7 +158,8 @@ export default function Modal({ mode, ctx, onSave, onDelete, onClose }) {
             deadline: '', 
             description: '', 
             artifacts: [],
-            comments: []
+            comments: [],
+            epicId: ctx?.epicId || (epics && epics[0]?.id) || ''
           }
     }
   })
@@ -190,6 +214,21 @@ export default function Modal({ mode, ctx, onSave, onDelete, onClose }) {
           </>
         ) : (
           <>
+            {!isEdit && (
+              <Field label="Эпик">
+                <select value={form.epicId} onChange={e => set('epicId', e.target.value)} style={s.input}>
+                  {epics && epics.length > 0 ? (
+                    epics.map(ep => (
+                      <option key={ep.id} value={ep.id}>
+                        {ep.name} ({ep.sprint})
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">Нет доступных эпиков</option>
+                  )}
+                </select>
+              </Field>
+            )}
             <div style={s.grid2}>
               <Field label="Статус"><Sel value={form.status} onChange={v => set('status', v)} options={Object.entries(STATUS_LABELS)} /></Field>
               <Field label="Приоритет"><Sel value={form.priority} onChange={v => set('priority', v)} options={Object.entries(PRIO_LABELS)} /></Field>
