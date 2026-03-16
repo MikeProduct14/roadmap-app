@@ -20,53 +20,78 @@ function ArtIcon({ type }) {
 }
 
 function TaskRow({ task, isSub, onEdit, onAddSub, onDragStart, onDragOver, onDrop, isDragging }) {
+  const [isHovering, setIsHovering] = React.useState(false)
+
   return (
     <tr 
       style={{ 
         borderBottom: '0.5px solid var(--bd)',
-        opacity: isDragging ? 0.5 : 1,
-        cursor: 'grab'
+        opacity: isDragging ? 0.4 : 1,
+        cursor: 'grab',
+        background: isHovering ? 'var(--bg2)' : 'transparent',
+        transition: 'background 0.15s ease, opacity 0.2s ease',
+        transform: isDragging ? 'scale(1.02)' : 'scale(1)',
       }}
       draggable={true}
       onDragStart={(e) => onDragStart(e, task)}
       onDragOver={onDragOver}
       onDrop={(e) => onDrop(e, task)}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
     >
-      <td style={{ padding: '10px 16px', paddingLeft: isSub ? 40 : 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }} onClick={() => onEdit(task)}>
-          {isSub && <span style={{ fontSize: 11, color: 'var(--tx3)' }}>↳</span>}
-          <span style={{ fontSize: 14, color: 'var(--tx)' }}>{task.name}</span>
-          {task.artifacts?.length > 0 && (
-            <span style={{ fontSize: 11, color: 'var(--tx3)' }} title={task.artifacts.map(a => a.name).join(', ')}>
-              📎{task.artifacts.length}
-            </span>
-          )}
-          {task.comments?.length > 0 && (
-            <span style={{ fontSize: 11, color: 'var(--tx3)' }} title={`${task.comments.length} комментариев`}>
-              💬{task.comments.length}
-            </span>
-          )}
-        </div>
-        {task.artifacts?.length > 0 && (
-          <div style={{ display: 'flex', gap: 5, marginTop: 5, paddingLeft: isSub ? 18 : 0, flexWrap: 'wrap' }}>
-            {task.artifacts.map((a, i) => (
-              <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--tx2)' }}>
-                <ArtIcon type={a.type} />
-                {a.url ? <a href={a.url} target="_blank" rel="noreferrer" style={{ color: 'var(--tx2)', textDecoration: 'none' }}>{a.name}</a> : <span>{a.name}</span>}
-              </span>
-            ))}
+      <td style={{ padding: '10px 16px', paddingLeft: isSub ? 40 : 16, width: '40%' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          <span 
+            style={{ 
+              fontSize: 14, 
+              color: 'var(--tx3)', 
+              cursor: 'grab',
+              opacity: isHovering ? 1 : 0.3,
+              transition: 'opacity 0.2s ease',
+              userSelect: 'none',
+              lineHeight: 1
+            }}
+            title="Перетащите для изменения порядка"
+          >
+            ⋮⋮
+          </span>
+          <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => onEdit(task)}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              {isSub && <span style={{ fontSize: 11, color: 'var(--tx3)' }}>↳</span>}
+              <span style={{ fontSize: 14, color: 'var(--tx)' }}>{task.name}</span>
+              {task.artifacts?.length > 0 && (
+                <span style={{ fontSize: 11, color: 'var(--tx3)' }} title={task.artifacts.map(a => a.name).join(', ')}>
+                  📎{task.artifacts.length}
+                </span>
+              )}
+              {task.comments?.length > 0 && (
+                <span style={{ fontSize: 11, color: 'var(--tx3)' }} title={`${task.comments.length} комментариев`}>
+                  💬{task.comments.length}
+                </span>
+              )}
+            </div>
+            {task.artifacts?.length > 0 && (
+              <div style={{ display: 'flex', gap: 5, marginTop: 5, paddingLeft: isSub ? 18 : 0, flexWrap: 'wrap' }}>
+                {task.artifacts.map((a, i) => (
+                  <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--tx2)' }}>
+                    <ArtIcon type={a.type} />
+                    {a.url ? <a href={a.url} target="_blank" rel="noreferrer" style={{ color: 'var(--tx2)', textDecoration: 'none' }}>{a.name}</a> : <span>{a.name}</span>}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </td>
-      <td style={{ padding: '10px 16px' }}><Badge status={task.status} /></td>
-      <td style={{ padding: '10px 16px' }}><PrioDot priority={task.priority} /></td>
-      <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--tx2)' }}>{task.sprint}</td>
-      <td style={{ padding: '10px 16px' }}>
+      <td style={{ padding: '10px 16px', width: '12%' }}><Badge status={task.status} /></td>
+      <td style={{ padding: '10px 16px', width: '8%' }}><PrioDot priority={task.priority} /></td>
+      <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--tx2)', width: '12%' }}>{task.sprint}</td>
+      <td style={{ padding: '10px 16px', width: '8%' }}>
         <span style={{ fontSize: 11, padding: '3px 7px', borderRadius: 5, background: 'var(--bg2)', color: 'var(--tx3)', fontWeight: 500 }}>{task.effort}</span>
       </td>
-      <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--tx3)' }}>{task.deadline || '—'}</td>
+      <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--tx3)', width: '12%' }}>{task.deadline || '—'}</td>
       {!isSub && (
-        <td style={{ padding: '10px 16px' }}>
+        <td style={{ padding: '10px 16px', width: '8%' }}>
           <button 
             onClick={(e) => { e.stopPropagation(); onAddSub(task); }} 
             style={{ 
@@ -77,14 +102,15 @@ function TaskRow({ task, isSub, onEdit, onAddSub, onDragStart, onDragOver, onDro
               background: 'transparent', 
               color: 'var(--tx2)', 
               cursor: 'pointer',
-              minHeight: 28
+              minHeight: 28,
+              whiteSpace: 'nowrap'
             }}
           >
             + подзадача
           </button>
         </td>
       )}
-      {isSub && <td />}
+      {isSub && <td style={{ width: '8%' }} />}
     </tr>
   )
 }
@@ -162,6 +188,7 @@ export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTa
         const allDone = tasks.filter(t => t.epicId === ep.id && !t.parentId && t.status === 'done').length
         const prog = rootTasks.length ? Math.round(allDone / rootTasks.length * 100) : 0
         const open = !collapsed[ep.id]
+        const [isHoveringEpic, setIsHoveringEpic] = React.useState(false)
 
         return (
           <div 
@@ -171,43 +198,74 @@ export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTa
               border: '1px solid var(--bd)', 
               borderRadius: 10, 
               overflow: 'hidden',
-              opacity: draggedEpic?.id === ep.id ? 0.5 : 1
+              opacity: draggedEpic?.id === ep.id ? 0.4 : 1,
+              transition: 'opacity 0.2s ease, transform 0.15s ease',
+              transform: draggedEpic?.id === ep.id ? 'scale(1.02)' : 'scale(1)',
             }}
             draggable={true}
             onDragStart={(e) => handleEpicDragStart(e, ep)}
             onDragOver={handleEpicDragOver}
             onDrop={(e) => handleEpicDrop(e, ep)}
+            onMouseEnter={() => setIsHoveringEpic(true)}
+            onMouseLeave={() => setIsHoveringEpic(false)}
           >
             <div
-              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', background: 'var(--bg2)', cursor: 'pointer', userSelect: 'none' }}
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 12, 
+                padding: '13px 16px', 
+                background: 'var(--bg2)', 
+                cursor: 'grab', 
+                userSelect: 'none',
+                transition: 'background 0.15s ease'
+              }}
               onClick={() => toggle(ep.id)}
             >
+              <span 
+                style={{ 
+                  fontSize: 16, 
+                  color: 'var(--tx3)', 
+                  cursor: 'grab',
+                  opacity: isHoveringEpic ? 1 : 0.3,
+                  transition: 'opacity 0.2s ease',
+                  lineHeight: 1,
+                  marginRight: -4
+                }}
+                title="Перетащите для изменения порядка"
+              >
+                ⋮⋮
+              </span>
               <span style={{ width: 11, height: 11, borderRadius: '50%', background: ep.color, flexShrink: 0 }} />
               <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--tx)', flex: 1 }}>{ep.name}</span>
-              <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{ep.sprint} · {rootTasks.length} задач</span>
+              <span style={{ fontSize: 12, color: 'var(--tx3)', whiteSpace: 'nowrap' }}>{ep.sprint} · {rootTasks.length} задач</span>
               <div style={{ width: 90, height: 4, background: 'var(--bd)', borderRadius: 2, overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: `${prog}%`, background: ep.color, borderRadius: 2, transition: 'width .3s' }} />
               </div>
               <span style={{ fontSize: 12, color: 'var(--tx3)', minWidth: 32 }}>{prog}%</span>
               <button
                 onClick={e => { e.stopPropagation(); onEditEpic(ep) }}
-                style={{ fontSize: 12, padding: '5px 10px', borderRadius: 5, border: '1px solid var(--bd2)', background: 'transparent', color: 'var(--tx2)', cursor: 'pointer', minHeight: 30 }}
+                style={{ fontSize: 12, padding: '5px 10px', borderRadius: 5, border: '1px solid var(--bd2)', background: 'transparent', color: 'var(--tx2)', cursor: 'pointer', minHeight: 30, whiteSpace: 'nowrap' }}
               >Изм.</button>
               <button
                 onClick={e => { e.stopPropagation(); onAddTask(ep) }}
-                style={{ fontSize: 12, padding: '5px 10px', borderRadius: 5, border: '1px solid var(--bd2)', background: 'transparent', color: 'var(--tx2)', cursor: 'pointer', minHeight: 30 }}
+                style={{ fontSize: 12, padding: '5px 10px', borderRadius: 5, border: '1px solid var(--bd2)', background: 'transparent', color: 'var(--tx2)', cursor: 'pointer', minHeight: 30, whiteSpace: 'nowrap' }}
               >+ задача</button>
               <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{open ? '▲' : '▼'}</span>
             </div>
 
             {open && (
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900, tableLayout: 'fixed' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--bd)', background: 'var(--bg)', position: 'sticky', top: 0, zIndex: 10 }}>
-                      {['Задача', 'Статус', 'Приоритет', 'Спринт', 'Усилие', 'Дедлайн', ''].map((h, i) => (
-                        <th key={i} style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)' }}>{h}</th>
-                      ))}
+                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '40%' }}>Задача</th>
+                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '12%' }}>Статус</th>
+                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '8%' }}>Приоритет</th>
+                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '12%' }}>Спринт</th>
+                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '8%' }}>Усилие</th>
+                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '12%' }}>Дедлайн</th>
+                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '8%' }}></th>
                     </tr>
                   </thead>
                   <tbody>
