@@ -5,10 +5,14 @@ import Auth from './Auth.jsx'
 import Modal from './Modal.jsx'
 import EpicsView from './EpicsView.jsx'
 import GanttView from './GanttView.jsx'
+import SettingsView from './SettingsView.jsx'
+import SprintReview from './SprintReview.jsx'
 
 const TABS = [
-  { id: 'epics', label: 'Эпики и задачи' },
-  { id: 'gantt', label: 'Гант' },
+  { id: 'epics', label: '📋 Доска' },
+  { id: 'gantt', label: '📊 Гант' },
+  { id: 'sprint', label: '🎯 Ревью' },
+  { id: 'settings', label: '⚙️ Настройки' },
 ]
 
 function useStore(user) {
@@ -47,7 +51,7 @@ function useStore(user) {
 export default function App() {
   const [user, setUser] = useState(null)
   const { state, update, loading } = useStore(user)
-  const { epics, tasks, nextEpicId, nextTaskId } = state
+  const { epics, tasks, nextEpicId, nextTaskId, settings } = state
 
   const [tab, setTab] = useState('epics')
   const [modal, setModal] = useState(null) // { mode, ctx }
@@ -96,7 +100,11 @@ export default function App() {
           parentId: ctx.parentId || null, 
           ...form,
           artifacts: cleanedArtifacts,
-          comments: form.comments || []
+          comments: form.comments || [],
+          assignee: form.assignee || 'Не назначен',
+          storyPoints: form.storyPoints || 0,
+          estimateHours: form.estimateHours || 0,
+          timeLog: form.timeLog || []
         }],
         nextTaskId: s.nextTaskId + 1
       }))
@@ -110,6 +118,10 @@ export default function App() {
           ...form,
           artifacts: cleanedArtifacts,
           comments: form.comments || [],
+          assignee: form.assignee || 'Не назначен',
+          storyPoints: form.storyPoints || 0,
+          estimateHours: form.estimateHours || 0,
+          timeLog: form.timeLog || [],
           // Remove old 'notes' field if exists
           notes: undefined
         } : t) 
@@ -172,12 +184,26 @@ export default function App() {
     })
   }
 
+  const handleSaveSettings = (newSettings) => {
+    update(s => ({ ...s, settings: newSettings }))
+  }
+
+  const handleSaveSprintHistory = (historyEntry) => {
+    update(s => ({
+      ...s,
+      settings: {
+        ...s.settings,
+        sprintHistory: [...(s.settings.sprintHistory || []), historyEntry]
+      }
+    }))
+  }
+
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '1.5rem 1rem' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 600, color: 'var(--tx)' }}>Roadmap</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 600, color: 'var(--tx)' }}>{settings?.projectName || 'Roadmap'}</h1>
           <span style={{ fontSize: 12, color: 'var(--tx3)' }}>
             {epics.length} эпиков · {tasks.length} задач
           </span>
@@ -219,6 +245,19 @@ export default function App() {
       {tab === 'gantt' && (
         <GanttView epics={epics} tasks={tasks} />
       )}
+      {tab === 'sprint' && (
+        <SprintReview 
+          tasks={tasks} 
+          settings={settings}
+          onSaveHistory={handleSaveSprintHistory}
+        />
+      )}
+      {tab === 'settings' && (
+        <SettingsView 
+          settings={settings}
+          onSave={handleSaveSettings}
+        />
+      )}
 
       {/* Modal */}
       {modal && (
@@ -226,6 +265,7 @@ export default function App() {
           mode={modal.mode}
           ctx={modal.ctx}
           epics={epics}
+          settings={settings}
           onSave={handleSave}
           onDelete={modal.mode === 'epic-edit' || modal.mode === 'task-edit' ? handleDelete : null}
           onClose={closeModal}

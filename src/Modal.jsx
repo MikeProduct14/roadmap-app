@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { SPRINTS, EPIC_COLORS, STATUS_LABELS, PRIO_LABELS, EFFORT_LABELS, SPHERE_LABELS, ART_TYPES } from './store.js'
+import { SPRINTS, EPIC_COLORS, STATUS_LABELS, PRIO_LABELS, EFFORT_LABELS, SPHERE_LABELS, ART_TYPES, STORY_POINTS } from './store.js'
 
 const s = {
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 40, zIndex: 300 },
@@ -23,6 +23,9 @@ const s = {
   commentDate: { fontSize: 11, color: 'var(--tx3)' },
   commentText: { fontSize: 13, color: 'var(--tx)', lineHeight: 1.5, whiteSpace: 'pre-wrap' },
   addCommentBtn: { fontSize: 12, padding: '6px 12px', borderRadius: 6, border: '1px solid var(--bd2)', background: 'var(--bg2)', color: 'var(--tx2)', cursor: 'pointer', fontFamily: 'inherit', marginTop: 6 },
+  timeLogRow: { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6, fontSize: 12 },
+  timeLogBox: { background: 'var(--bg2)', padding: 10, borderRadius: 7, marginBottom: 6, border: '1px solid var(--bd)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  addTimeBtn: { fontSize: 12, padding: '6px 12px', borderRadius: 6, border: '1px solid var(--bd2)', background: 'var(--bg2)', color: 'var(--tx2)', cursor: 'pointer', fontFamily: 'inherit', marginTop: 6 },
 }
 
 function Field({ label, children }) {
@@ -127,7 +130,68 @@ function CommentsSection({ comments, onChange }) {
   )
 }
 
-export default function Modal({ mode, ctx, epics, onSave, onDelete, onClose }) {
+function TimeLogSection({ timeLog, onChange }) {
+  const [newLog, setNewLog] = useState({ date: new Date().toISOString().split('T')[0], hours: '', comment: '' })
+
+  const addLog = () => {
+    if (!newLog.hours || parseFloat(newLog.hours) <= 0) {
+      alert('Укажите количество часов')
+      return
+    }
+    onChange([...timeLog, { ...newLog, hours: parseFloat(newLog.hours) }])
+    setNewLog({ date: new Date().toISOString().split('T')[0], hours: '', comment: '' })
+  }
+
+  const removeLog = (i) => {
+    if (!confirm('Удалить запись времени?')) return
+    onChange(timeLog.filter((_, j) => j !== i))
+  }
+
+  const totalHours = timeLog.reduce((sum, log) => sum + log.hours, 0)
+
+  return (
+    <div style={s.row}>
+      <label style={s.label}>Логирование времени (всего: {totalHours} ч)</label>
+      {timeLog.map((log, i) => (
+        <div key={i} style={s.timeLogBox}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12, color: 'var(--tx)', marginBottom: 2 }}>
+              <strong>{log.date}</strong> — {log.hours} ч
+            </div>
+            {log.comment && <div style={{ fontSize: 11, color: 'var(--tx3)' }}>{log.comment}</div>}
+          </div>
+          <button style={{ ...s.artRm, fontSize: 16 }} onClick={() => removeLog(i)} title="Удалить">×</button>
+        </div>
+      ))}
+      <div style={s.timeLogRow}>
+        <input 
+          type="date" 
+          value={newLog.date} 
+          onChange={e => setNewLog({ ...newLog, date: e.target.value })} 
+          style={{ ...s.input, flex: 1 }} 
+        />
+        <input 
+          type="number" 
+          min="0.5" 
+          step="0.5" 
+          value={newLog.hours} 
+          onChange={e => setNewLog({ ...newLog, hours: e.target.value })} 
+          placeholder="Часы" 
+          style={{ ...s.input, width: 80 }} 
+        />
+        <input 
+          value={newLog.comment} 
+          onChange={e => setNewLog({ ...newLog, comment: e.target.value })} 
+          placeholder="Комментарий (опц.)" 
+          style={{ ...s.input, flex: 2 }} 
+        />
+      </div>
+      <button style={s.addTimeBtn} onClick={addLog}>+ Добавить время</button>
+    </div>
+  )
+}
+
+export default function Modal({ mode, ctx, epics, settings, onSave, onDelete, onClose }) {
   const isEpic = mode === 'epic' || mode === 'epic-edit'
   const isEdit = mode === 'epic-edit' || mode === 'task-edit'
 
@@ -148,7 +212,11 @@ export default function Modal({ mode, ctx, epics, onSave, onDelete, onClose }) {
             description: ctx.description || ctx.notes || '', 
             artifacts: JSON.parse(JSON.stringify(ctx.artifacts || [])),
             comments: ctx.comments || [],
-            epicId: ctx.epicId
+            epicId: ctx.epicId,
+            assignee: ctx.assignee || 'Не назначен',
+            storyPoints: ctx.storyPoints || 0,
+            estimateHours: ctx.estimateHours || 0,
+            timeLog: ctx.timeLog || []
           }
         : { 
             name: '', 
@@ -160,7 +228,11 @@ export default function Modal({ mode, ctx, epics, onSave, onDelete, onClose }) {
             description: '', 
             artifacts: [],
             comments: [],
-            epicId: ctx?.epicId || (epics && epics[0]?.id) || ''
+            epicId: ctx?.epicId || (epics && epics[0]?.id) || '',
+            assignee: 'Не назначен',
+            storyPoints: 0,
+            estimateHours: 0,
+            timeLog: []
           }
     }
   })
@@ -233,12 +305,41 @@ export default function Modal({ mode, ctx, epics, onSave, onDelete, onClose }) {
                 </Field>
               )}
               <div style={s.grid2}>
-                <Field label="Статус"><Sel value={form.status} onChange={v => set('status', v)} options={Object.entries(STATUS_LABELS)} /></Field>
-                <Field label="Приоритет"><Sel value={form.priority} onChange={v => set('priority', v)} options={Object.entries(PRIO_LABELS)} /></Field>
+                <Field label="Статус">
+                  <Sel value={form.status} onChange={v => set('status', v)} options={(settings?.statuses || Object.keys(STATUS_LABELS)).map(st => [st, STATUS_LABELS[st] || st])} />
+                </Field>
+                <Field label="Приоритет">
+                  <Sel value={form.priority} onChange={v => set('priority', v)} options={(settings?.priorities || Object.keys(PRIO_LABELS)).map(pr => [pr, PRIO_LABELS[pr] || pr])} />
+                </Field>
                 <Field label="Спринт"><Sel value={form.sprint} onChange={v => set('sprint', v)} options={SPRINTS.map(s => [s, s])} /></Field>
-                <Field label="Усилие"><Sel value={form.effort} onChange={v => set('effort', v)} options={Object.entries(EFFORT_LABELS)} /></Field>
+                <Field label="Усилие">
+                  <Sel value={form.effort} onChange={v => set('effort', v)} options={(settings?.efforts || Object.keys(EFFORT_LABELS)).map(ef => [ef, EFFORT_LABELS[ef] || ef])} />
+                </Field>
               </div>
-              <Field label="Дедлайн"><input type="date" value={form.deadline} onChange={e => set('deadline', e.target.value)} style={s.input} /></Field>
+              <div style={s.grid2}>
+                <Field label="Ответственный">
+                  <select value={form.assignee} onChange={e => set('assignee', e.target.value)} style={s.input}>
+                    {(settings?.teamMembers || ['Не назначен']).map(member => (
+                      <option key={member} value={member}>{member}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Дедлайн"><input type="date" value={form.deadline} onChange={e => set('deadline', e.target.value)} style={s.input} /></Field>
+              </div>
+              <div style={s.grid2}>
+                {settings?.useStoryPoints ? (
+                  <Field label="Story Points">
+                    <select value={form.storyPoints} onChange={e => set('storyPoints', +e.target.value)} style={s.input}>
+                      {STORY_POINTS.map(sp => <option key={sp} value={sp}>{sp}</option>)}
+                    </select>
+                  </Field>
+                ) : (
+                  <Field label="Оценка (часы)">
+                    <input type="number" min="0" step="0.5" value={form.estimateHours} onChange={e => set('estimateHours', +e.target.value)} style={s.input} />
+                  </Field>
+                )}
+                <div />
+              </div>
               <Field label="Описание">
                 <textarea 
                   value={form.description} 
@@ -248,6 +349,7 @@ export default function Modal({ mode, ctx, epics, onSave, onDelete, onClose }) {
                 />
               </Field>
               <ArtifactEditor arts={form.artifacts} onChange={v => set('artifacts', v)} />
+              <TimeLogSection timeLog={form.timeLog} onChange={v => set('timeLog', v)} />
               <CommentsSection comments={form.comments} onChange={v => set('comments', v)} />
             </>
           )}
