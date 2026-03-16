@@ -34,7 +34,7 @@ function save(key, val) {
 
 // Supabase functions
 export async function loadStateFromSupabase(userId) {
-  if (!isSupabaseConfigured()) return null
+  if (!isSupabaseConfigured() || !supabase) return null
 
   try {
     const { data, error } = await supabase
@@ -61,7 +61,7 @@ export async function loadStateFromSupabase(userId) {
 }
 
 export async function saveStateToSupabase(userId, state) {
-  if (!isSupabaseConfigured()) return
+  if (!isSupabaseConfigured() || !supabase) return
 
   try {
     const { error } = await supabase

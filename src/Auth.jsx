@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react'
-import { supabase } from './supabase.js'
+import { supabase, isSupabaseConfigured } from './supabase.js'
 
 export default function Auth({ onAuth }) {
   const [loading, setLoading] = useState(false)
   const [session, setSession] = useState(null)
 
   useEffect(() => {
+    if (!isSupabaseConfigured() || !supabase) return
+
     // Получаем текущую сессию
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
@@ -22,6 +24,7 @@ export default function Auth({ onAuth }) {
   }, [onAuth])
 
   const signInWithGoogle = async () => {
+    if (!supabase) return
     setLoading(true)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -34,6 +37,7 @@ export default function Auth({ onAuth }) {
   }
 
   const signInWithGithub = async () => {
+    if (!supabase) return
     setLoading(true)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
@@ -46,6 +50,7 @@ export default function Auth({ onAuth }) {
   }
 
   const signOut = async () => {
+    if (!supabase) return
     await supabase.auth.signOut()
     window.location.reload()
   }
