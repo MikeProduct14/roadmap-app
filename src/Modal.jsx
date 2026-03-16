@@ -3,16 +3,17 @@ import { SPRINTS, EPIC_COLORS, STATUS_LABELS, PRIO_LABELS, EFFORT_LABELS, SPHERE
 
 const s = {
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 40, zIndex: 300 },
-  modal: { background: 'var(--bg)', border: '0.5px solid var(--bd2)', borderRadius: 'var(--radius)', width: '100%', maxWidth: 560, maxHeight: '85vh', overflowY: 'auto', padding: '24px 26px 70px 26px', position: 'relative' },
+  modal: { background: 'var(--bg)', border: '0.5px solid var(--bd2)', borderRadius: 'var(--radius)', width: '100%', maxWidth: 560, maxHeight: '85vh', position: 'relative', display: 'flex', flexDirection: 'column' },
+  modalContent: { overflowY: 'auto', padding: '24px 26px', flex: 1 },
   h: { fontSize: 17, fontWeight: 600, marginBottom: 20, color: 'var(--tx)' },
   label: { display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 6, fontWeight: 500 },
   input: { width: '100%', fontSize: 14, padding: '9px 12px', borderRadius: 7, border: '1px solid var(--bd2)', background: 'var(--bg2)', color: 'var(--tx)' },
   row: { marginBottom: 14 },
   grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 },
-  footer: { position: 'sticky', bottom: 0, left: 0, right: 0, display: 'flex', justifyContent: 'flex-end', gap: 10, padding: '12px 26px', background: 'var(--bg)', borderTop: '1px solid var(--bd)', marginLeft: -26, marginRight: -26, marginBottom: -70, zIndex: 10 },
+  footer: { display: 'flex', justifyContent: 'flex-end', gap: 10, padding: '12px 26px', background: 'var(--bg)', borderTop: '1px solid var(--bd)', flexShrink: 0, borderRadius: '0 0 var(--radius) var(--radius)' },
   btn: { fontSize: 13, padding: '8px 16px', borderRadius: 7, border: '1px solid var(--bd2)', background: 'var(--bg2)', color: 'var(--tx)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500 },
   btnPrimary: { fontSize: 13, padding: '8px 16px', borderRadius: 7, border: 'none', background: 'var(--tx)', color: 'var(--bg)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 },
-  closeX: { position: 'absolute', right: 16, top: 16, background: 'none', border: 'none', fontSize: 22, color: 'var(--tx3)', cursor: 'pointer', lineHeight: 1, padding: 4 },
+  closeX: { position: 'absolute', right: 16, top: 16, background: 'none', border: 'none', fontSize: 22, color: 'var(--tx3)', cursor: 'pointer', lineHeight: 1, padding: 4, zIndex: 1 },
   artRow: { display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 },
   artRm: { background: 'none', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 18, padding: '4px 6px', minWidth: 32, minHeight: 32 },
   addArt: { fontSize: 12, color: 'var(--tx2)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2, fontFamily: 'inherit', padding: '6px 0', marginTop: 4 },
@@ -189,65 +190,68 @@ export default function Modal({ mode, ctx, epics, onSave, onDelete, onClose }) {
     <div style={s.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={s.modal}>
         <button style={s.closeX} onClick={onClose}>×</button>
-        <div style={s.h}>{mode === 'epic' ? 'Новый эпик' : mode === 'epic-edit' ? 'Редактировать эпик' : mode === 'task-edit' ? 'Редактировать задачу' : 'Новая задача'}</div>
+        
+        <div style={s.modalContent}>
+          <div style={s.h}>{mode === 'epic' ? 'Новый эпик' : mode === 'epic-edit' ? 'Редактировать эпик' : mode === 'task-edit' ? 'Редактировать задачу' : 'Новая задача'}</div>
 
-        <Field label="Название">
-          <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Название..." style={s.input} autoFocus />
-        </Field>
+          <Field label="Название">
+            <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Название..." style={s.input} autoFocus />
+          </Field>
 
-        {isEpic ? (
-          <>
-            <div style={s.grid2}>
-              <Field label="Спринт"><Sel value={form.sprint} onChange={v => set('sprint', v)} options={SPRINTS.map(s => [s, s])} /></Field>
-              <Field label="Цвет">
-                <select value={form.color} onChange={e => set('color', e.target.value)} style={s.input}>
-                  {EPIC_COLORS.map(c => <option key={c} value={c} style={{ background: c, color: '#fff' }}>{c}</option>)}
-                </select>
+          {isEpic ? (
+            <>
+              <div style={s.grid2}>
+                <Field label="Спринт"><Sel value={form.sprint} onChange={v => set('sprint', v)} options={SPRINTS.map(s => [s, s])} /></Field>
+                <Field label="Цвет">
+                  <select value={form.color} onChange={e => set('color', e.target.value)} style={s.input}>
+                    {EPIC_COLORS.map(c => <option key={c} value={c} style={{ background: c, color: '#fff' }}>{c}</option>)}
+                  </select>
+                </Field>
+                <Field label="Начало (неделя от старта)">
+                  <input type="number" min={0} max={15} value={form.startW} onChange={e => set('startW', +e.target.value)} style={s.input} />
+                </Field>
+                <Field label="Длительность (нед.)">
+                  <input type="number" min={1} max={16} value={form.durW} onChange={e => set('durW', +e.target.value)} style={s.input} />
+                </Field>
+              </div>
+            </>
+          ) : (
+            <>
+              {!isEdit && (
+                <Field label="Эпик">
+                  <select value={form.epicId} onChange={e => set('epicId', e.target.value)} style={s.input}>
+                    {epics && epics.length > 0 ? (
+                      epics.map(ep => (
+                        <option key={ep.id} value={ep.id}>
+                          {ep.name} ({ep.sprint})
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">Нет доступных эпиков</option>
+                    )}
+                  </select>
+                </Field>
+              )}
+              <div style={s.grid2}>
+                <Field label="Статус"><Sel value={form.status} onChange={v => set('status', v)} options={Object.entries(STATUS_LABELS)} /></Field>
+                <Field label="Приоритет"><Sel value={form.priority} onChange={v => set('priority', v)} options={Object.entries(PRIO_LABELS)} /></Field>
+                <Field label="Спринт"><Sel value={form.sprint} onChange={v => set('sprint', v)} options={SPRINTS.map(s => [s, s])} /></Field>
+                <Field label="Усилие"><Sel value={form.effort} onChange={v => set('effort', v)} options={Object.entries(EFFORT_LABELS)} /></Field>
+              </div>
+              <Field label="Дедлайн"><input type="date" value={form.deadline} onChange={e => set('deadline', e.target.value)} style={s.input} /></Field>
+              <Field label="Описание">
+                <textarea 
+                  value={form.description} 
+                  onChange={e => set('description', e.target.value)} 
+                  style={{ ...s.input, minHeight: form.description.length > 100 ? 120 : 70, resize: 'vertical' }} 
+                  placeholder="Подробное описание задачи..."
+                />
               </Field>
-              <Field label="Начало (неделя от старта)">
-                <input type="number" min={0} max={15} value={form.startW} onChange={e => set('startW', +e.target.value)} style={s.input} />
-              </Field>
-              <Field label="Длительность (нед.)">
-                <input type="number" min={1} max={16} value={form.durW} onChange={e => set('durW', +e.target.value)} style={s.input} />
-              </Field>
-            </div>
-          </>
-        ) : (
-          <>
-            {!isEdit && (
-              <Field label="Эпик">
-                <select value={form.epicId} onChange={e => set('epicId', e.target.value)} style={s.input}>
-                  {epics && epics.length > 0 ? (
-                    epics.map(ep => (
-                      <option key={ep.id} value={ep.id}>
-                        {ep.name} ({ep.sprint})
-                      </option>
-                    ))
-                  ) : (
-                    <option value="">Нет доступных эпиков</option>
-                  )}
-                </select>
-              </Field>
-            )}
-            <div style={s.grid2}>
-              <Field label="Статус"><Sel value={form.status} onChange={v => set('status', v)} options={Object.entries(STATUS_LABELS)} /></Field>
-              <Field label="Приоритет"><Sel value={form.priority} onChange={v => set('priority', v)} options={Object.entries(PRIO_LABELS)} /></Field>
-              <Field label="Спринт"><Sel value={form.sprint} onChange={v => set('sprint', v)} options={SPRINTS.map(s => [s, s])} /></Field>
-              <Field label="Усилие"><Sel value={form.effort} onChange={v => set('effort', v)} options={Object.entries(EFFORT_LABELS)} /></Field>
-            </div>
-            <Field label="Дедлайн"><input type="date" value={form.deadline} onChange={e => set('deadline', e.target.value)} style={s.input} /></Field>
-            <Field label="Описание">
-              <textarea 
-                value={form.description} 
-                onChange={e => set('description', e.target.value)} 
-                style={{ ...s.input, minHeight: form.description.length > 100 ? 120 : 70, resize: 'vertical' }} 
-                placeholder="Подробное описание задачи..."
-              />
-            </Field>
-            <ArtifactEditor arts={form.artifacts} onChange={v => set('artifacts', v)} />
-            <CommentsSection comments={form.comments} onChange={v => set('comments', v)} />
-          </>
-        )}
+              <ArtifactEditor arts={form.artifacts} onChange={v => set('artifacts', v)} />
+              <CommentsSection comments={form.comments} onChange={v => set('comments', v)} />
+            </>
+          )}
+        </div>
 
         <div style={s.footer}>
           {isEdit && onDelete && <button style={s.deleteBtn} onClick={onDelete}>Удалить</button>}
