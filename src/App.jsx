@@ -5,12 +5,14 @@ import Auth from './Auth.jsx'
 import Modal from './Modal.jsx'
 import EpicsView from './EpicsView.jsx'
 import GanttView from './GanttView.jsx'
+import ScrumbanView from './ScrumbanView.jsx'
 import SettingsView from './SettingsView.jsx'
 import SprintReview from './SprintReview.jsx'
 import RetroView from './RetroView.jsx'
 
 const TABS = [
   { id: 'epics', label: '📋 Доска' },
+  { id: 'scrumban', label: '🎴 Scrumban' },
   { id: 'gantt', label: '📊 Гант' },
   { id: 'sprint', label: '🎯 Ревью' },
   { id: 'retro', label: '🔄 Ретро' },
@@ -247,6 +249,13 @@ export default function App() {
       {tab === 'gantt' && (
         <GanttView epics={epics} tasks={tasks} />
       )}
+      {tab === 'scrumban' && (
+        <ScrumbanView 
+          epics={epics} 
+          tasks={tasks}
+          onEditTask={t => setModal({ mode: 'task-edit', ctx: t })}
+        />
+      )}
       {tab === 'sprint' && (
         <SprintReview 
           tasks={tasks} 
@@ -287,7 +296,7 @@ export default function App() {
         >
           vibecodify.ru
         </a>
-        {' '}studio, founded by Mikhail Eroshnikin
+        {' '}studio, founded by Mikhail Yeroshikin
       </div>
 
       {/* Modal */}
