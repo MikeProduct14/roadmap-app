@@ -1,6 +1,5 @@
 -- ============================================================
--- Roadmap App — Supabase Setup
--- Выполни этот скрипт в SQL Editor: Dashboard → SQL Editor
+-- Roadmap App — Supabase Setup (idempotent, можно запускать повторно)
 -- ============================================================
 
 -- ============================================================
@@ -19,6 +18,10 @@ CREATE TABLE IF NOT EXISTS profiles (
 
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can read own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
+
 CREATE POLICY "Users can read own profile"
   ON profiles FOR SELECT USING (auth.uid() = id);
 
@@ -30,8 +33,6 @@ CREATE POLICY "Users can update own profile"
 
 -- ============================================================
 -- 2. Триггер: создаём профиль при регистрации
--- БАГ 7 FIX: создаём запись с email/name, phone и role остаются NULL
--- (пользователь заполнит их в форме ProfileForm)
 -- ============================================================
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
@@ -47,7 +48,7 @@ BEGIN
     ),
     NEW.raw_user_meta_data->>'avatar_url'
   )
-  ON CONFLICT (id) DO NOTHING; -- не перезаписываем если уже есть
+  ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -59,7 +60,6 @@ CREATE TRIGGER on_auth_user_created
 
 -- ============================================================
 -- 3. Таблица roadmaps
--- БАГ 10 FIX: добавлена колонка settings JSONB
 -- ============================================================
 CREATE TABLE IF NOT EXISTS roadmaps (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -74,7 +74,15 @@ CREATE TABLE IF NOT EXISTS roadmaps (
   UNIQUE(user_id)
 );
 
+-- Добавляем колонку settings если её нет (для уже существующих таблиц)
+ALTER TABLE roadmaps ADD COLUMN IF NOT EXISTS settings JSONB DEFAULT '{}'::jsonb;
+
 ALTER TABLE roadmaps ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can read own roadmap" ON roadmaps;
+DROP POLICY IF EXISTS "Users can insert own roadmap" ON roadmaps;
+DROP POLICY IF EXISTS "Users can update own roadmap" ON roadmaps;
+DROP POLICY IF EXISTS "Users can delete own roadmap" ON roadmaps;
 
 CREATE POLICY "Users can read own roadmap"
   ON roadmaps FOR SELECT USING (auth.uid() = user_id);
@@ -93,9 +101,3 @@ CREATE POLICY "Users can delete own roadmap"
 -- ============================================================
 CREATE INDEX IF NOT EXISTS roadmaps_user_id_idx ON roadmaps(user_id);
 CREATE INDEX IF NOT EXISTS profiles_email_idx ON profiles(email);
-
--- ============================================================
--- 5. Если таблица roadmaps уже существует без колонки settings —
---    добавь её вручную:
---    ALTER TABLE roadmaps ADD COLUMN IF NOT EXISTS settings JSONB DEFAULT '{}'::jsonb;
--- ============================================================
