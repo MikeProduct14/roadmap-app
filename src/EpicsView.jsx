@@ -21,11 +21,14 @@ function ArtIcon({ type }) {
   return <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 3, background: c.bg, color: c.tx, fontWeight: 700 }}>{type.toUpperCase()}</span>
 }
 
-function TaskRow({ task, isSub, onEdit, onAddSub, onDragStart, onDragOver, onDrop, isDragging, statusLabels, priorityLabels }) {
+function TaskRow({ task, isSub, onEdit, onAddSub, onDragStart, onDragOver, onDrop, isDragging, statusLabels, priorityLabels, useStoryPoints }) {
   const [isHovering, setIsHovering] = React.useState(false)
   
   // Check if deadline is overdue
   const isOverdue = task.deadline && task.status !== 'done' && new Date(task.deadline) < new Date()
+  
+  // Check if task needs estimation
+  const needsEstimation = (task.storyPoints === 0 || task.storyPoints === undefined) && (task.estimateHours === 0 || task.estimateHours === undefined)
 
   return (
     <tr 
@@ -45,7 +48,7 @@ function TaskRow({ task, isSub, onEdit, onAddSub, onDragStart, onDragOver, onDro
       onMouseLeave={() => setIsHovering(false)}
       data-task-id={task.id}
     >
-      <td style={{ padding: '10px 16px', width: '35%' }}>
+      <td style={{ padding: '10px 16px', width: '32%' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
           <span 
             style={{ 
@@ -134,14 +137,23 @@ function TaskRow({ task, isSub, onEdit, onAddSub, onDragStart, onDragOver, onDro
           </div>
         </div>
       </td>
-      <td style={{ padding: '10px 16px', width: '12%' }}><Badge status={task.status} statusLabels={statusLabels} /></td>
-      <td style={{ padding: '10px 16px', width: '8%' }}><PrioDot priority={task.priority} priorityLabels={priorityLabels} /></td>
-      <td style={{ padding: '10px 16px', fontSize: 11, color: 'var(--tx2)', width: '12%' }}>{task.assignee || 'Не назначен'}</td>
-      <td style={{ padding: '10px 16px', fontSize: 11, color: 'var(--tx2)', width: '11%' }}>{task.sprint}</td>
-      <td style={{ padding: '10px 16px', width: '8%' }}>
+      <td style={{ padding: '10px 16px', width: '11%' }}><Badge status={task.status} statusLabels={statusLabels} /></td>
+      <td style={{ padding: '10px 16px', width: '7%' }}><PrioDot priority={task.priority} priorityLabels={priorityLabels} /></td>
+      <td style={{ padding: '10px 16px', fontSize: 11, color: 'var(--tx2)', width: '11%' }}>{task.assignee || 'Не назначен'}</td>
+      <td style={{ padding: '10px 16px', fontSize: 11, color: 'var(--tx2)', width: '10%' }}>{task.sprint}</td>
+      <td style={{ padding: '10px 16px', width: '7%' }}>
         <span style={{ fontSize: 10, padding: '3px 7px', borderRadius: 5, background: 'var(--bg2)', color: 'var(--tx3)', fontWeight: 500 }}>{task.effort}</span>
       </td>
-      <td style={{ padding: '10px 16px', fontSize: 11, color: isOverdue ? '#E24B4A' : 'var(--tx3)', width: '14%', fontWeight: isOverdue ? 600 : 400 }}>
+      <td style={{ padding: '10px 16px', width: '10%' }}>
+        {needsEstimation ? (
+          <span style={{ fontSize: 10, padding: '3px 7px', borderRadius: 5, background: '#FCEBEB', color: '#A32D2D', fontWeight: 500 }}>Ожидает оценки</span>
+        ) : (
+          <span style={{ fontSize: 11, color: 'var(--tx2)' }}>
+            {useStoryPoints ? `${task.storyPoints} SP` : `${task.estimateHours} ч`}
+          </span>
+        )}
+      </td>
+      <td style={{ padding: '10px 16px', fontSize: 11, color: isOverdue ? '#E24B4A' : 'var(--tx3)', width: '12%', fontWeight: isOverdue ? 600 : 400 }}>
         {task.deadline || '—'}
         {isOverdue && ' ⚠️'}
       </td>
@@ -340,16 +352,17 @@ export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTa
 
             {open && (
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900, tableLayout: 'fixed' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 1100, tableLayout: 'fixed' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--bd)', background: 'var(--bg)', position: 'sticky', top: 0, zIndex: 10 }}>
-                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '35%' }}>Задача</th>
-                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '12%' }}>Статус</th>
-                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '8%' }}>Приор.</th>
-                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '12%' }}>Ответств.</th>
-                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '11%' }}>Спринт</th>
-                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '8%' }}>Усилие</th>
-                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '14%' }}>Дедлайн</th>
+                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '32%' }}>Задача</th>
+                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '11%' }}>Статус</th>
+                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '7%' }}>Приор.</th>
+                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '11%' }}>Ответств.</th>
+                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '10%' }}>Спринт</th>
+                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '7%' }}>Усилие</th>
+                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '10%' }}>Оценка</th>
+                      <th style={{ fontSize: 11, color: 'var(--tx3)', fontWeight: 600, padding: '8px 16px', textAlign: 'left', background: 'var(--bg)', width: '12%' }}>Дедлайн</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -366,6 +379,7 @@ export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTa
                           isDragging={draggedTask?.id === t.id}
                           statusLabels={statusLabels}
                           priorityLabels={priorityLabels}
+                          useStoryPoints={settings?.useStoryPoints}
                         />
                         {tasks.filter(s => s.parentId === t.id).map(sub => (
                           <TaskRow 
@@ -380,12 +394,13 @@ export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTa
                             isDragging={draggedTask?.id === sub.id}
                             statusLabels={statusLabels}
                             priorityLabels={priorityLabels}
+                            useStoryPoints={settings?.useStoryPoints}
                           />
                         ))}
                       </React.Fragment>
                     ))}
                     {rootTasks.length === 0 && (
-                      <tr><td colSpan={7} style={{ padding: '14px 16px', fontSize: 14, color: 'var(--tx3)', fontStyle: 'italic' }}>Нет задач — добавь первую</td></tr>
+                      <tr><td colSpan={8} style={{ padding: '14px 16px', fontSize: 14, color: 'var(--tx3)', fontStyle: 'italic' }}>Нет задач — добавь первую</td></tr>
                     )}
                   </tbody>
                 </table>

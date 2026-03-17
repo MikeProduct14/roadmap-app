@@ -306,14 +306,14 @@ export default function Modal({ mode, ctx, epics, settings, onSave, onDelete, on
               )}
               <div style={s.grid2}>
                 <Field label="Статус">
-                  <Sel value={form.status} onChange={v => set('status', v)} options={(settings?.statuses || Object.keys(STATUS_LABELS)).map(st => [st, STATUS_LABELS[st] || st])} />
+                  <Sel value={form.status} onChange={v => set('status', v)} options={(settings?.statuses || Object.keys(STATUS_LABELS)).map(st => [st, (settings?.statusLabels || STATUS_LABELS)[st] || st])} />
                 </Field>
                 <Field label="Приоритет">
-                  <Sel value={form.priority} onChange={v => set('priority', v)} options={(settings?.priorities || Object.keys(PRIO_LABELS)).map(pr => [pr, PRIO_LABELS[pr] || pr])} />
+                  <Sel value={form.priority} onChange={v => set('priority', v)} options={(settings?.priorities || Object.keys(PRIO_LABELS)).map(pr => [pr, (settings?.priorityLabels || PRIO_LABELS)[pr] || pr])} />
                 </Field>
                 <Field label="Спринт"><Sel value={form.sprint} onChange={v => set('sprint', v)} options={SPRINTS.map(s => [s, s])} /></Field>
                 <Field label="Усилие">
-                  <Sel value={form.effort} onChange={v => set('effort', v)} options={(settings?.efforts || Object.keys(EFFORT_LABELS)).map(ef => [ef, EFFORT_LABELS[ef] || ef])} />
+                  <Sel value={form.effort} onChange={v => set('effort', v)} options={(settings?.efforts || Object.keys(EFFORT_LABELS)).map(ef => [ef, (settings?.effortLabels || EFFORT_LABELS)[ef] || ef])} />
                 </Field>
               </div>
               <div style={s.grid2}>
