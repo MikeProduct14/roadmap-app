@@ -6,12 +6,14 @@ const STATUS_BG = { backlog: '#F1EFE8', ready: '#FAEEDA', wip: '#E6F1FB', done: 
 const STATUS_TX = { backlog: '#5F5E5A', ready: '#854F0B', wip: '#185FA5', done: '#3B6D11', frozen: '#A32D2D' }
 const ART_COLORS = { pdf: { bg: '#FCEBEB', tx: '#A32D2D' }, doc: { bg: '#E6F1FB', tx: '#185FA5' }, link: { bg: '#EAF3DE', tx: '#3B6D11' } }
 
-function Badge({ status }) {
-  return <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 99, background: STATUS_BG[status], color: STATUS_TX[status], fontWeight: 500, whiteSpace: 'nowrap' }}>{STATUS_LABELS[status]}</span>
+function Badge({ status, statusLabels }) {
+  const label = (statusLabels && statusLabels[status]) || STATUS_LABELS[status] || status
+  return <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 99, background: STATUS_BG[status] || '#F1EFE8', color: STATUS_TX[status] || '#5F5E5A', fontWeight: 500, whiteSpace: 'nowrap' }}>{label}</span>
 }
 
-function PrioDot({ priority }) {
-  return <span style={{ width: 8, height: 8, borderRadius: '50%', background: PRIO_COLORS[priority], display: 'inline-block', flexShrink: 0 }} title={PRIO_LABELS[priority]} />
+function PrioDot({ priority, priorityLabels }) {
+  const label = (priorityLabels && priorityLabels[priority]) || PRIO_LABELS[priority] || priority
+  return <span style={{ width: 8, height: 8, borderRadius: '50%', background: PRIO_COLORS[priority] || '#888780', display: 'inline-block', flexShrink: 0 }} title={label} />
 }
 
 function ArtIcon({ type }) {
@@ -19,7 +21,7 @@ function ArtIcon({ type }) {
   return <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 3, background: c.bg, color: c.tx, fontWeight: 700 }}>{type.toUpperCase()}</span>
 }
 
-function TaskRow({ task, isSub, onEdit, onAddSub, onDragStart, onDragOver, onDrop, isDragging }) {
+function TaskRow({ task, isSub, onEdit, onAddSub, onDragStart, onDragOver, onDrop, isDragging, statusLabels, priorityLabels }) {
   const [isHovering, setIsHovering] = React.useState(false)
   
   // Check if deadline is overdue
@@ -132,8 +134,8 @@ function TaskRow({ task, isSub, onEdit, onAddSub, onDragStart, onDragOver, onDro
           </div>
         </div>
       </td>
-      <td style={{ padding: '10px 16px', width: '12%' }}><Badge status={task.status} /></td>
-      <td style={{ padding: '10px 16px', width: '8%' }}><PrioDot priority={task.priority} /></td>
+      <td style={{ padding: '10px 16px', width: '12%' }}><Badge status={task.status} statusLabels={statusLabels} /></td>
+      <td style={{ padding: '10px 16px', width: '8%' }}><PrioDot priority={task.priority} priorityLabels={priorityLabels} /></td>
       <td style={{ padding: '10px 16px', fontSize: 11, color: 'var(--tx2)', width: '12%' }}>{task.assignee || 'Не назначен'}</td>
       <td style={{ padding: '10px 16px', fontSize: 11, color: 'var(--tx2)', width: '11%' }}>{task.sprint}</td>
       <td style={{ padding: '10px 16px', width: '8%' }}>
@@ -147,7 +149,9 @@ function TaskRow({ task, isSub, onEdit, onAddSub, onDragStart, onDragOver, onDro
   )
 }
 
-export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTask, onEditTask, onAddSub, onReorderEpics, onReorderTasks }) {
+export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTask, onEditTask, onAddSub, onReorderEpics, onReorderTasks, settings }) {
+  const statusLabels = settings?.statusLabels
+  const priorityLabels = settings?.priorityLabels
   const [collapsed, setCollapsed] = useState({})
   const [draggedEpic, setDraggedEpic] = useState(null)
   const [draggedTask, setDraggedTask] = useState(null)
@@ -360,6 +364,8 @@ export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTa
                           onDragOver={handleTaskDragOver}
                           onDrop={handleTaskDrop}
                           isDragging={draggedTask?.id === t.id}
+                          statusLabels={statusLabels}
+                          priorityLabels={priorityLabels}
                         />
                         {tasks.filter(s => s.parentId === t.id).map(sub => (
                           <TaskRow 
@@ -372,6 +378,8 @@ export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTa
                             onDragOver={handleTaskDragOver}
                             onDrop={handleTaskDrop}
                             isDragging={draggedTask?.id === sub.id}
+                            statusLabels={statusLabels}
+                            priorityLabels={priorityLabels}
                           />
                         ))}
                       </React.Fragment>

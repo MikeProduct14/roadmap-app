@@ -61,8 +61,12 @@ export async function loadStateFromSupabase(userId) {
         priorities: DEFAULT_PRIORITIES,
         efforts: DEFAULT_EFFORTS,
         useStoryPoints: true,
-        sprintHistory: []
-      }
+        sprintHistory: [],
+        statusLabels: { ...STATUS_LABELS },
+        priorityLabels: { ...PRIO_LABELS },
+        effortLabels: { ...EFFORT_LABELS }
+      },
+      _updatedAt: data.updated_at || null
     }
   } catch (err) {
     console.error('Error loading from Supabase:', err)
@@ -105,7 +109,11 @@ export function loadState() {
       priorities: DEFAULT_PRIORITIES,
       efforts: DEFAULT_EFFORTS,
       useStoryPoints: true,
-      sprintHistory: []
+      sprintHistory: [],
+      // Храним labels для кастомных значений
+      statusLabels: { ...STATUS_LABELS },
+      priorityLabels: { ...PRIO_LABELS },
+      effortLabels: { ...EFFORT_LABELS }
     })
   }
 }
@@ -116,6 +124,7 @@ export function saveState(state) {
   save('rm_neid', state.nextEpicId)
   save('rm_ntid', state.nextTaskId)
   save('rm_settings', state.settings)
+  save('rm_updated_at', new Date().toISOString())
 }
 
 export const SPRINTS = ['Sprint 1', 'Sprint 2', 'Sprint 3', 'Sprint 4', 'Backlog']

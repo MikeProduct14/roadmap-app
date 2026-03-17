@@ -27,10 +27,24 @@ function useStore(user) {
   useEffect(() => {
     if (user && isSupabaseConfigured()) {
       setLoading(true)
-      loadStateFromSupabase(user.id).then(data => {
-        if (data) {
-          setState(data)
-          saveState(data)
+      loadStateFromSupabase(user.id).then(cloudData => {
+        if (cloudData) {
+          // БАГ 5 FIX: сравниваем временные метки — берём более свежие данные
+          const localUpdatedAt = localStorage.getItem('rm_updated_at')
+          const cloudUpdatedAt = cloudData._updatedAt
+          const { _updatedAt, ...cloudState } = cloudData
+
+          if (localUpdatedAt && cloudUpdatedAt && new Date(localUpdatedAt) > new Date(cloudUpdatedAt)) {
+            // Локальные данные новее — сохраняем их в облако
+            setState(prev => {
+              saveStateToSupabase(user.id, prev)
+              return prev
+            })
+          } else {
+            // Облачные данные новее или нет локальной метки — берём облако
+            setState(cloudState)
+            saveState(cloudState)
+          }
         } else {
           // Нет данных в Supabase — сохраняем текущий localStorage state в облако
           setState(prev => {
@@ -81,7 +95,9 @@ export default function App() {
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
+      if (_event === 'SIGNED_IN' || _event === 'SIGNED_OUT' || _event === 'USER_UPDATED') {
+        setUser(session?.user ?? null)
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -273,6 +289,7 @@ export default function App() {
         <EpicsView
           epics={epics}
           tasks={tasks}
+          settings={settings}
           onAddEpic={() => setModal({ mode: 'epic', ctx: null })}
           onEditEpic={ep => setModal({ mode: 'epic-edit', ctx: ep })}
           onAddTask={ep => setModal({ mode: 'task', ctx: { epicId: ep?.id || epics[0]?.id, parentId: null, sprint: ep?.sprint || 'Sprint 1' } })}
@@ -289,6 +306,7 @@ export default function App() {
         <ScrumbanView 
           epics={epics} 
           tasks={tasks}
+          settings={settings}
           onEditTask={t => setModal({ mode: 'task-edit', ctx: t })}
         />
       )}

@@ -24,9 +24,10 @@ const s = {
   emptyColumn: { fontSize: 12, color: 'var(--tx3)', fontStyle: 'italic', textAlign: 'center', padding: '20px 10px' },
 }
 
-function TaskCard({ task, epic, onClick }) {
+function TaskCard({ task, epic, onClick, priorityLabels }) {
   const [isHovering, setIsHovering] = useState(false)
   const isOverdue = task.deadline && task.status !== 'done' && new Date(task.deadline) < new Date()
+  const prioLabel = (priorityLabels && priorityLabels[task.priority]) || PRIO_LABELS[task.priority] || task.priority
 
   return (
     <div 
@@ -46,7 +47,7 @@ function TaskCard({ task, epic, onClick }) {
             {epic.name}
           </span>
         )}
-        <span style={{ ...s.prioDot, background: PRIO_COLORS[task.priority] }} title={PRIO_LABELS[task.priority]} />
+        <span style={{ ...s.prioDot, background: PRIO_COLORS[task.priority] || '#888780' }} title={prioLabel} />
         {task.assignee && task.assignee !== 'Не назначен' && (
           <span style={s.assignee}>{task.assignee}</span>
         )}
@@ -71,11 +72,11 @@ function TaskCard({ task, epic, onClick }) {
   )
 }
 
-function Column({ status, tasks, epics, onTaskClick }) {
+function Column({ status, tasks, epics, onTaskClick, statusLabel, priorityLabels }) {
   return (
     <div style={s.column}>
       <div style={s.columnHeader}>
-        <span>{STATUS_LABELS[status]}</span>
+        <span>{statusLabel}</span>
         <span style={s.columnCount}>{tasks.length}</span>
       </div>
       {tasks.length === 0 ? (
@@ -88,6 +89,7 @@ function Column({ status, tasks, epics, onTaskClick }) {
               key={task.id} 
               task={task} 
               epic={epic}
+              priorityLabels={priorityLabels}
               onClick={() => onTaskClick(task)}
             />
           )
@@ -97,7 +99,9 @@ function Column({ status, tasks, epics, onTaskClick }) {
   )
 }
 
-export default function ScrumbanView({ epics, tasks, onEditTask }) {
+export default function ScrumbanView({ epics, tasks, onEditTask, settings }) {
+  const statusLabels = settings?.statusLabels || STATUS_LABELS
+  const priorityLabels = settings?.priorityLabels || PRIO_LABELS
   const [sprintFilter, setSprintFilter] = useState('Sprint 1')
 
   // Filter tasks by sprint and exclude subtasks
@@ -195,6 +199,8 @@ export default function ScrumbanView({ epics, tasks, onEditTask }) {
             tasks={tasksByStatus[status]}
             epics={epics}
             onTaskClick={onEditTask}
+            statusLabel={statusLabels[status] || status}
+            priorityLabels={priorityLabels}
           />
         ))}
       </div>
