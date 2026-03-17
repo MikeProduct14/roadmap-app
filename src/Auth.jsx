@@ -8,50 +8,96 @@ const inp = {
 }
 
 const COUNTRY_CODES = [
-  { code: '+7',   flag: '🇷🇺', label: '+7 (RU/KZ)' },
-  { code: '+380', flag: '🇺🇦', label: '+380 (UA)' },
-  { code: '+375', flag: '🇧🇾', label: '+375 (BY)' },
-  { code: '+998', flag: '🇺🇿', label: '+998 (UZ)' },
-  { code: '+1',   flag: '🇺🇸', label: '+1 (US/CA)' },
-  { code: '+44',  flag: '🇬🇧', label: '+44 (UK)' },
-  { code: '+49',  flag: '🇩🇪', label: '+49 (DE)' },
-  { code: '+33',  flag: '🇫🇷', label: '+33 (FR)' },
-  { code: '+86',  flag: '🇨🇳', label: '+86 (CN)' },
+  { code: '+7',   flag: '🇷🇺', label: '+7', minLen: 10, maxLen: 10, startsWith: ['9', '8', '7', '4', '3'] }, // RU/KZ
+  { code: '+380', flag: '🇺🇦', label: '+380', minLen: 9, maxLen: 9, startsWith: ['5', '6', '7', '9'] },
+  { code: '+375', flag: '🇧🇾', label: '+375', minLen: 9, maxLen: 9, startsWith: ['2', '3', '4'] },
+  { code: '+998', flag: '🇺🇿', label: '+998', minLen: 9, maxLen: 9, startsWith: ['9', '7', '6'] },
+  { code: '+1',   flag: '🇺🇸', label: '+1', minLen: 10, maxLen: 10, startsWith: null },
+  { code: '+44',  flag: '🇬🇧', label: '+44', minLen: 10, maxLen: 10, startsWith: null },
+  { code: '+49',  flag: '🇩🇪', label: '+49', minLen: 10, maxLen: 11, startsWith: null },
+  { code: '+33',  flag: '🇫🇷', label: '+33', minLen: 9, maxLen: 9, startsWith: null },
+  { code: '+86',  flag: '🇨🇳', label: '+86', minLen: 11, maxLen: 11, startsWith: ['1'] },
+]
+
+const IT_ROLES = [
+  'Product Manager',
+  'Software Engineer',
+  'Frontend Developer',
+  'Backend Developer',
+  'UX/UI Designer',
+  'QA Engineer',
+  'DevOps / SRE',
+  'Data Analyst',
+  'Project Manager',
+  'CTO / Tech Lead',
 ]
 
 function PhoneInput({ onChange }) {
   const [countryCode, setCountryCode] = useState('+7')
   const [localNumber, setLocalNumber] = useState('')
+  const [error, setError] = useState('')
+
+  const getCountry = (code) => COUNTRY_CODES.find(c => c.code === code)
+
+  const validate = (code, number) => {
+    const country = getCountry(code)
+    if (!country || !number) { setError(''); return }
+    if (country.startsWith && number.length > 0 && !country.startsWith.includes(number[0])) {
+      setError(`Номер должен начинаться с: ${country.startsWith.join(', ')}`)
+      return
+    }
+    if (number.length > 0 && number.length < country.minLen) {
+      setError(`Нужно ${country.minLen} цифр, введено ${number.length}`)
+      return
+    }
+    setError('')
+  }
 
   const handleCodeChange = (code) => {
     setCountryCode(code)
-    onChange(code + localNumber)
+    setLocalNumber('')
+    setError('')
+    onChange(code)
   }
 
   const handleNumberChange = (e) => {
     const digits = e.target.value.replace(/\D/g, '')
-    setLocalNumber(digits)
-    onChange(countryCode + digits)
+    const country = getCountry(countryCode)
+    const capped = country ? digits.slice(0, country.maxLen) : digits.slice(0, 15)
+    setLocalNumber(capped)
+    validate(countryCode, capped)
+    onChange(countryCode + capped)
   }
 
+  const country = getCountry(countryCode)
+
   return (
-    <div style={{ display: 'flex', gap: 8 }}>
-      <select
-        value={countryCode}
-        onChange={e => handleCodeChange(e.target.value)}
-        style={{ ...inp, width: 'auto', flexShrink: 0, paddingRight: 8 }}
-      >
-        {COUNTRY_CODES.map(c => (
-          <option key={c.code} value={c.code}>{c.flag} {c.label}</option>
-        ))}
-      </select>
-      <input
-        type="tel"
-        value={localNumber}
-        onChange={handleNumberChange}
-        placeholder="9991234567"
-        style={{ ...inp, flex: 1 }}
-      />
+    <div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <select
+          value={countryCode}
+          onChange={e => handleCodeChange(e.target.value)}
+          style={{ ...inp, width: 90, flexShrink: 0, fontSize: 14 }}
+        >
+          {COUNTRY_CODES.map(c => (
+            <option key={c.code} value={c.code}>{c.flag} {c.label}</option>
+          ))}
+        </select>
+        <input
+          type="tel"
+          value={localNumber}
+          onChange={handleNumberChange}
+          placeholder={country ? '9'.repeat(country.minLen) : '9991234567'}
+          style={{ ...inp, flex: 1 }}
+        />
+      </div>
+      {error && <div style={{ fontSize: 11, color: '#E24B4A', marginTop: 4 }}>{error}</div>}
+      {!error && country && (
+        <div style={{ fontSize: 11, color: 'var(--tx3)', marginTop: 4 }}>
+          {country.minLen === country.maxLen ? `${country.minLen} цифр` : `${country.minLen}–${country.maxLen} цифр`}
+          {country.startsWith ? `, начинается с: ${country.startsWith.join(', ')}` : ''}
+        </div>
+      )}
     </div>
   )
 }
@@ -64,7 +110,6 @@ function validatePhone(phone) {
   const digits = phone.replace(/\D/g, '')
   return digits.length >= 10 && digits.length <= 15
 }
-
 async function checkProfile(userId) {
   try {
     const { data } = await supabase.from('profiles').select('phone,role').eq('id', userId).single()
@@ -127,7 +172,10 @@ function ProfileForm({ user, onComplete }) {
           </div>
           <div style={{ marginBottom: 14 }}>
             <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 6, fontWeight: 500 }}>Должность/Роль <span style={{ color: '#E24B4A' }}>*</span></label>
-            <input type="text" value={role} onChange={e => setRole(e.target.value)} placeholder="Product Manager, Developer, Designer..." required style={inp} />
+            <select value={role} onChange={e => setRole(e.target.value)} required style={inp}>
+              <option value="">— выберите роль —</option>
+              {IT_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
           </div>
           <div style={{ marginBottom: 24 }}>
             <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 6, fontWeight: 500 }}>Имя (опционально)</label>

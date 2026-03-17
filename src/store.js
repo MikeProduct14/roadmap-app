@@ -127,6 +127,16 @@ export function saveState(state) {
   save('rm_updated_at', new Date().toISOString())
 }
 
+// Сохраняет данные в localStorage БЕЗ обновления временной метки
+// Используется при загрузке из облака, чтобы не затирать метку локальных изменений
+export function saveStateWithoutTimestamp(state) {
+  save('rm_epics', state.epics)
+  save('rm_tasks', state.tasks)
+  save('rm_neid', state.nextEpicId)
+  save('rm_ntid', state.nextTaskId)
+  save('rm_settings', state.settings)
+}
+
 export const SPRINTS = ['Sprint 1', 'Sprint 2', 'Sprint 3', 'Sprint 4', 'Backlog']
 export const EPIC_COLORS = ['#378ADD', '#1D9E75', '#D85A30', '#BA7517', '#534AB7', '#D4537E', '#639922', '#888780']
 

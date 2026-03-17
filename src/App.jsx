@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react'
-import { loadState, saveState, loadStateFromSupabase, saveStateToSupabase } from './store.js'
+import { loadState, saveState, saveStateWithoutTimestamp, loadStateFromSupabase, saveStateToSupabase } from './store.js'
 import { isSupabaseConfigured, supabase } from './supabase.js'
 import Auth, { LoginScreen } from './Auth.jsx'
 import Modal from './Modal.jsx'
@@ -29,24 +29,30 @@ function useStore(user) {
       setLoading(true)
       loadStateFromSupabase(user.id).then(cloudData => {
         if (cloudData) {
-          // БАГ 5 FIX: сравниваем временные метки — берём более свежие данные
           const localUpdatedAt = localStorage.getItem('rm_updated_at')
           const cloudUpdatedAt = cloudData._updatedAt
           const { _updatedAt, ...cloudState } = cloudData
 
+          // Локальные данные новее — оставляем их и пушим в облако
           if (localUpdatedAt && cloudUpdatedAt && new Date(localUpdatedAt) > new Date(cloudUpdatedAt)) {
-            // Локальные данные новее — сохраняем их в облако
+            setState(prev => {
+              saveStateToSupabase(user.id, prev)
+              return prev
+            })
+          } else if (!cloudUpdatedAt && localUpdatedAt) {
+            // Облако есть, но без метки — доверяем локальным
             setState(prev => {
               saveStateToSupabase(user.id, prev)
               return prev
             })
           } else {
-            // Облачные данные новее или нет локальной метки — берём облако
+            // Облачные данные новее — берём их, но НЕ перезаписываем rm_updated_at
             setState(cloudState)
-            saveState(cloudState)
+            // Сохраняем данные в localStorage без обновления временной метки
+            saveStateWithoutTimestamp(cloudState)
           }
         } else {
-          // Нет данных в Supabase — сохраняем текущий localStorage state в облако
+          // Нет данных в Supabase — пушим локальные
           setState(prev => {
             saveStateToSupabase(user.id, prev)
             return prev
