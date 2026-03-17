@@ -7,6 +7,64 @@ const inp = {
   background: 'var(--bg2)', color: 'var(--tx)'
 }
 
+const COUNTRY_CODES = [
+  { code: '+7',   flag: '🇷🇺', label: '+7 (RU/KZ)' },
+  { code: '+380', flag: '🇺🇦', label: '+380 (UA)' },
+  { code: '+375', flag: '🇧🇾', label: '+375 (BY)' },
+  { code: '+998', flag: '🇺🇿', label: '+998 (UZ)' },
+  { code: '+1',   flag: '🇺🇸', label: '+1 (US/CA)' },
+  { code: '+44',  flag: '🇬🇧', label: '+44 (UK)' },
+  { code: '+49',  flag: '🇩🇪', label: '+49 (DE)' },
+  { code: '+33',  flag: '🇫🇷', label: '+33 (FR)' },
+  { code: '+86',  flag: '🇨🇳', label: '+86 (CN)' },
+]
+
+function PhoneInput({ onChange }) {
+  const [countryCode, setCountryCode] = useState('+7')
+  const [localNumber, setLocalNumber] = useState('')
+
+  const handleCodeChange = (code) => {
+    setCountryCode(code)
+    onChange(code + localNumber)
+  }
+
+  const handleNumberChange = (e) => {
+    const digits = e.target.value.replace(/\D/g, '')
+    setLocalNumber(digits)
+    onChange(countryCode + digits)
+  }
+
+  return (
+    <div style={{ display: 'flex', gap: 8 }}>
+      <select
+        value={countryCode}
+        onChange={e => handleCodeChange(e.target.value)}
+        style={{ ...inp, width: 'auto', flexShrink: 0, paddingRight: 8 }}
+      >
+        {COUNTRY_CODES.map(c => (
+          <option key={c.code} value={c.code}>{c.flag} {c.label}</option>
+        ))}
+      </select>
+      <input
+        type="tel"
+        value={localNumber}
+        onChange={handleNumberChange}
+        placeholder="9991234567"
+        style={{ ...inp, flex: 1 }}
+      />
+    </div>
+  )
+}
+
+function validateEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+}
+
+function validatePhone(phone) {
+  const digits = phone.replace(/\D/g, '')
+  return digits.length >= 10 && digits.length <= 15
+}
+
 async function checkProfile(userId) {
   try {
     const { data } = await supabase.from('profiles').select('phone,role').eq('id', userId).single()
@@ -14,29 +72,32 @@ async function checkProfile(userId) {
   } catch { return false }
 }
 
-// Форма заполнения профиля после первого входа
 function ProfileForm({ user, onComplete }) {
-  const [form, setForm] = useState({
-    email: user.email || '',
-    phone: '',
-    role: '',
-    name: user.user_metadata?.full_name || user.user_metadata?.name || ''
-  })
+  const [phone, setPhone] = useState('')
+  const [role, setRole] = useState('')
+  const [name, setName] = useState(user.user_metadata?.full_name || user.user_metadata?.name || '')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!form.phone.trim() || !form.role.trim()) {
-      alert('Заполните обязательные поля: телефон и должность')
+
+    if (!validatePhone(phone)) {
+      alert('Некорректный номер телефона. Введите хотя бы 10 цифр.')
       return
     }
+
+    if (!role.trim()) {
+      alert('Укажите должность')
+      return
+    }
+
     setLoading(true)
     const { error } = await supabase.from('profiles').upsert({
       id: user.id,
-      email: form.email,
-      phone: form.phone.trim(),
-      role: form.role.trim(),
-      name: form.name.trim() || null,
+      email: user.email,
+      phone: phone.replace(/\D/g, ''),
+      role: role.trim(),
+      name: name.trim() || null,
       avatar_url: user.user_metadata?.avatar_url || null,
       updated_at: new Date().toISOString()
     })
@@ -50,25 +111,27 @@ function ProfileForm({ user, onComplete }) {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: 'var(--bg)', padding: 40, borderRadius: 12, maxWidth: 450, width: '90%' }}>
+      <div style={{ background: 'var(--bg)', padding: 40, borderRadius: 12, maxWidth: 480, width: '90%' }}>
         <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8, color: 'var(--tx)' }}>Завершите регистрацию</h2>
         <p style={{ fontSize: 13, color: 'var(--tx2)', marginBottom: 24 }}>Заполните профиль для продолжения</p>
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: 14 }}>
             <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 6, fontWeight: 500 }}>Email</label>
-            <input type="email" value={form.email} disabled style={{ ...inp, opacity: 0.6 }} />
+            <input type="email" value={user.email || ''} disabled style={{ ...inp, opacity: 0.6 }} />
           </div>
           <div style={{ marginBottom: 14 }}>
-            <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 6, fontWeight: 500 }}>Телефон <span style={{ color: '#E24B4A' }}>*</span></label>
-            <input type="tel" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+7 (999) 123-45-67" required style={inp} />
+            <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 6, fontWeight: 500 }}>
+              Телефон <span style={{ color: '#E24B4A' }}>*</span>
+            </label>
+            <PhoneInput onChange={setPhone} />
           </div>
           <div style={{ marginBottom: 14 }}>
             <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 6, fontWeight: 500 }}>Должность/Роль <span style={{ color: '#E24B4A' }}>*</span></label>
-            <input type="text" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} placeholder="Product Manager, Developer, Designer..." required style={inp} />
+            <input type="text" value={role} onChange={e => setRole(e.target.value)} placeholder="Product Manager, Developer, Designer..." required style={inp} />
           </div>
           <div style={{ marginBottom: 24 }}>
             <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 6, fontWeight: 500 }}>Имя (опционально)</label>
-            <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Ваше имя" style={inp} />
+            <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Ваше имя" style={inp} />
           </div>
           <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', fontSize: 14, fontWeight: 600, border: 'none', background: 'var(--tx)', color: 'var(--bg)', borderRadius: 8, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: loading ? 0.6 : 1 }}>
             {loading ? 'Сохранение...' : 'Продолжить'}
@@ -79,57 +142,68 @@ function ProfileForm({ user, onComplete }) {
   )
 }
 
-// Экран логина (показывается когда user === null)
 export function LoginScreen() {
   const [loading, setLoading] = useState(false)
   const [mode, setMode] = useState('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [errorMsg, setErrorMsg] = useState('')
 
   const getRedirectUrl = () => {
     const { origin, pathname } = window.location
-    const base = pathname.replace(/\/$/, '').replace(/\/[^/]*$/, '') || pathname.replace(/\/$/, '')
-    // На GitHub Pages pathname = /roadmap-app/, локально = /
     return `${origin}${pathname.endsWith('/') ? pathname : pathname + '/'}`
   }
 
   const signInWithGoogle = async () => {
-    setLoading(true)
+    setLoading(true); setErrorMsg('')
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: getRedirectUrl() }
     })
-    if (error) { alert('Ошибка: ' + error.message); setLoading(false) }
-    // loading остаётся true — страница уйдёт на редирект
+    if (error) { setErrorMsg('Ошибка: ' + error.message); setLoading(false) }
   }
 
   const signInWithGithub = async () => {
-    setLoading(true)
+    setLoading(true); setErrorMsg('')
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: { redirectTo: getRedirectUrl() }
     })
-    if (error) { alert('Ошибка: ' + error.message); setLoading(false) }
+    if (error) { setErrorMsg('Ошибка: ' + error.message); setLoading(false) }
   }
 
   const handleEmailAuth = async (e) => {
     e.preventDefault()
+    setErrorMsg('')
+
+    if (!validateEmail(email)) {
+      setErrorMsg('Некорректный email адрес')
+      return
+    }
+
     setLoading(true)
     if (mode === 'signup') {
       const { data, error } = await supabase.auth.signUp({ email, password })
       if (error) {
-        alert('Ошибка регистрации: ' + error.message)
+        setErrorMsg('Ошибка регистрации: ' + error.message)
         setLoading(false)
       } else if (!data.session) {
-        alert('Письмо отправлено! Подтвердите email и войдите.')
+        setErrorMsg('✅ Письмо отправлено! Подтвердите email и войдите.')
         setMode('signin')
         setLoading(false)
       }
-      // если data.session есть — onAuthStateChange в App сам подхватит
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) { alert('Ошибка входа: ' + error.message); setLoading(false) }
-      // успех — onAuthStateChange в App сам подхватит
+      if (error) {
+        if (error.message.includes('Invalid login credentials') || error.message.includes('invalid_credentials')) {
+          setErrorMsg('Неверный email или пароль. Нет аккаунта? Нажмите «Зарегистрируйтесь» ниже.')
+        } else if (error.message.includes('Email not confirmed')) {
+          setErrorMsg('Email не подтверждён. Проверьте почту и перейдите по ссылке.')
+        } else {
+          setErrorMsg('Ошибка входа: ' + error.message)
+        }
+        setLoading(false)
+      }
     }
   }
 
@@ -165,18 +239,33 @@ export function LoginScreen() {
           <div style={{ flex: 1, height: 1, background: 'var(--bd)' }} /><span>или</span><div style={{ flex: 1, height: 1, background: 'var(--bd)' }} />
         </div>
 
+        {errorMsg && (
+          <div style={{
+            marginBottom: 16,
+            padding: '10px 14px',
+            borderRadius: 7,
+            background: errorMsg.startsWith('✅') ? '#EAF3DE' : '#FCEBEB',
+            color: errorMsg.startsWith('✅') ? '#3B6D11' : '#A32D2D',
+            fontSize: 13,
+            textAlign: 'left',
+            lineHeight: 1.5
+          }}>
+            {errorMsg}
+          </div>
+        )}
+
         <form onSubmit={handleEmailAuth} style={{ textAlign: 'left' }}>
           <div style={{ marginBottom: 12 }}>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" required style={inp} />
+            <input type="email" value={email} onChange={e => { setEmail(e.target.value); setErrorMsg('') }} placeholder="Email" required style={inp} />
           </div>
           <div style={{ marginBottom: 16 }}>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Пароль (минимум 6 символов)" required minLength={6} style={inp} />
+            <input type="password" value={password} onChange={e => { setPassword(e.target.value); setErrorMsg('') }} placeholder="Пароль (минимум 6 символов)" required minLength={6} style={inp} />
           </div>
           <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', fontSize: 14, fontWeight: 600, border: 'none', background: 'var(--tx)', color: 'var(--bg)', borderRadius: 8, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', marginBottom: 12, opacity: loading ? 0.6 : 1 }}>
             {loading ? 'Загрузка...' : mode === 'signup' ? 'Зарегистрироваться' : 'Войти'}
           </button>
         </form>
-        <button onClick={() => setMode(m => m === 'signin' ? 'signup' : 'signin')} style={{ background: 'none', border: 'none', color: 'var(--tx2)', fontSize: 13, cursor: 'pointer', textDecoration: 'underline', fontFamily: 'inherit' }}>
+        <button onClick={() => { setMode(m => m === 'signin' ? 'signup' : 'signin'); setErrorMsg('') }} style={{ background: 'none', border: 'none', color: 'var(--tx2)', fontSize: 13, cursor: 'pointer', textDecoration: 'underline', fontFamily: 'inherit' }}>
           {mode === 'signin' ? 'Нет аккаунта? Зарегистрируйтесь' : 'Уже есть аккаунт? Войдите'}
         </button>
       </div>
@@ -184,7 +273,6 @@ export function LoginScreen() {
   )
 }
 
-// Аватар + кнопка выхода в хедере (показывается когда user залогинен)
 export default function Auth({ user }) {
   const [needsProfile, setNeedsProfile] = useState(false)
   const [profileChecked, setProfileChecked] = useState(false)
@@ -199,7 +287,6 @@ export default function Auth({ user }) {
 
   const signOut = async () => {
     await supabase.auth.signOut()
-    // onAuthStateChange в App сам обнулит user
   }
 
   if (needsProfile) {
