@@ -21,15 +21,22 @@ const TABS = [
 
 function useStore(user) {
   const [state, setState] = useState(() => loadState())
+  // БАГ 6 FIX: loading=true пока user не определён или данные грузятся
   const [loading, setLoading] = useState(true)
 
-  // Load from Supabase when user logs in
   useEffect(() => {
     if (user && isSupabaseConfigured()) {
+      setLoading(true)
       loadStateFromSupabase(user.id).then(data => {
         if (data) {
           setState(data)
-          saveState(data) // Sync to localStorage
+          saveState(data)
+        } else {
+          // Нет данных в Supabase — сохраняем текущий localStorage state в облако
+          setState(prev => {
+            saveStateToSupabase(user.id, prev)
+            return prev
+          })
         }
         setLoading(false)
       })
@@ -62,7 +69,7 @@ export default function App() {
 
   // Show auth screen if Supabase is configured but user is not logged in
   if (isSupabaseConfigured() && !user) {
-    return <Auth onAuth={setUser} />
+    return <Auth onAuth={u => { setUser(u) }} />
   }
 
   if (loading) {

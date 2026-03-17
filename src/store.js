@@ -44,15 +44,16 @@ export async function loadStateFromSupabase(userId) {
       .single()
 
     if (error) {
-      if (error.code === 'PGRST116') return null // No data yet
+      if (error.code === 'PGRST116') return null // No data yet — вернём null, App подставит seed
       throw error
     }
 
     return {
-      epics: data.epics || [],
-      tasks: data.tasks || [],
-      nextEpicId: data.next_epic_id || 1,
-      nextTaskId: data.next_task_id || 1,
+      // БАГ 5 FIX: если данные есть но пустые — используем seed
+      epics: data.epics?.length ? data.epics : SEED_EPICS,
+      tasks: data.tasks?.length ? data.tasks : SEED_TASKS,
+      nextEpicId: data.next_epic_id || 5,
+      nextTaskId: data.next_task_id || 10,
       settings: data.settings || {
         projectName: 'Roadmap',
         teamMembers: DEFAULT_TEAM_MEMBERS,
