@@ -1,23 +1,227 @@
 import React, { useState, useEffect } from 'react'
 import { supabase, isSupabaseConfigured } from './supabase.js'
 
+function ProfileForm({ user, onComplete }) {
+  const [form, setForm] = useState({
+    email: user.email || '',
+    phone: '',
+    role: '',
+    name: user.user_metadata?.full_name || user.user_metadata?.name || ''
+  })
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!form.phone || !form.role) {
+      alert('Заполните обязательные поля: телефон и должность')
+      return
+    }
+
+    setLoading(true)
+    const { error } = await supabase
+      .from('profiles')
+      .upsert({
+        id: user.id,
+        email: form.email,
+        phone: form.phone,
+        role: form.role,
+        name: form.name || null,
+        avatar_url: user.user_metadata?.avatar_url || null,
+        updated_at: new Date().toISOString()
+      })
+
+    if (error) {
+      alert('Ошибка сохранения профиля: ' + error.message)
+      setLoading(false)
+      return
+    }
+
+    onComplete()
+  }
+
+  return (
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        background: 'var(--bg)',
+        padding: 40,
+        borderRadius: 12,
+        maxWidth: 450,
+        width: '90%'
+      }}>
+        <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8, color: 'var(--tx)' }}>
+          Завершите регистрацию
+        </h2>
+        <p style={{ fontSize: 13, color: 'var(--tx2)', marginBottom: 24 }}>
+          Заполните профиль для продолжения
+        </p>
+
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 6, fontWeight: 500 }}>
+              Email
+            </label>
+            <input
+              type="email"
+              value={form.email}
+              disabled
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                fontSize: 14,
+                border: '1px solid var(--bd2)',
+                borderRadius: 7,
+                background: 'var(--bg2)',
+                color: 'var(--tx3)',
+                opacity: 0.7
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 6, fontWeight: 500 }}>
+              Телефон <span style={{ color: '#E24B4A' }}>*</span>
+            </label>
+            <input
+              type="tel"
+              value={form.phone}
+              onChange={e => setForm({ ...form, phone: e.target.value })}
+              placeholder="+7 (999) 123-45-67"
+              required
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                fontSize: 14,
+                border: '1px solid var(--bd2)',
+                borderRadius: 7,
+                background: 'var(--bg2)',
+                color: 'var(--tx)'
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 6, fontWeight: 500 }}>
+              Должность/Роль <span style={{ color: '#E24B4A' }}>*</span>
+            </label>
+            <input
+              type="text"
+              value={form.role}
+              onChange={e => setForm({ ...form, role: e.target.value })}
+              placeholder="Product Manager, Developer, Designer..."
+              required
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                fontSize: 14,
+                border: '1px solid var(--bd2)',
+                borderRadius: 7,
+                background: 'var(--bg2)',
+                color: 'var(--tx)'
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: 24 }}>
+            <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 6, fontWeight: 500 }}>
+              Имя (опционально)
+            </label>
+            <input
+              type="text"
+              value={form.name}
+              onChange={e => setForm({ ...form, name: e.target.value })}
+              placeholder="Ваше имя"
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                fontSize: 14,
+                border: '1px solid var(--bd2)',
+                borderRadius: 7,
+                background: 'var(--bg2)',
+                color: 'var(--tx)'
+              }}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: '12px',
+              fontSize: 14,
+              fontWeight: 600,
+              border: 'none',
+              background: 'var(--tx)',
+              color: 'var(--bg)',
+              borderRadius: 8,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              fontFamily: 'inherit',
+              opacity: loading ? 0.6 : 1
+            }}
+          >
+            {loading ? 'Сохранение...' : 'Продолжить'}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 export default function Auth({ onAuth }) {
   const [loading, setLoading] = useState(false)
   const [session, setSession] = useState(null)
+  const [needsProfile, setNeedsProfile] = useState(false)
+  const [mode, setMode] = useState('signin') // 'signin' or 'signup'
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
 
   useEffect(() => {
     if (!isSupabaseConfigured() || !supabase) return
 
     // Получаем текущую сессию
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session)
-      if (session) onAuth(session.user)
+      if (session) {
+        // Проверяем, есть ли профиль
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single()
+
+        if (!profile || !profile.phone || !profile.role) {
+          setNeedsProfile(true)
+        } else {
+          onAuth(session.user)
+        }
+      }
     })
 
     // Слушаем изменения авторизации
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session)
-      if (session) onAuth(session.user)
+      if (session) {
+        // Проверяем профиль
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single()
+
+        if (!profile || !profile.phone || !profile.role) {
+          setNeedsProfile(true)
+        } else {
+          onAuth(session.user)
+        }
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -49,10 +253,50 @@ export default function Auth({ onAuth }) {
     setLoading(false)
   }
 
+  const handleEmailAuth = async (e) => {
+    e.preventDefault()
+    if (!supabase || !email || !password) return
+
+    setLoading(true)
+    
+    if (mode === 'signup') {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin
+        }
+      })
+      if (error) {
+        alert('Ошибка регистрации: ' + error.message)
+      } else {
+        alert('Проверьте email для подтверждения регистрации')
+      }
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
+      if (error) {
+        alert('Ошибка входа: ' + error.message)
+      }
+    }
+    
+    setLoading(false)
+  }
+
   const signOut = async () => {
     if (!supabase) return
     await supabase.auth.signOut()
     window.location.reload()
+  }
+
+  // Если нужно заполнить профиль
+  if (session && needsProfile) {
+    return <ProfileForm user={session.user} onComplete={() => {
+      setNeedsProfile(false)
+      onAuth(session.user)
+    }} />
   }
 
   if (session) {
@@ -66,13 +310,15 @@ export default function Auth({ onAuth }) {
         borderRadius: 8,
         fontSize: 13
       }}>
-        <img 
-          src={session.user.user_metadata.avatar_url} 
-          alt="avatar"
-          style={{ width: 28, height: 28, borderRadius: '50%' }}
-        />
+        {session.user.user_metadata?.avatar_url && (
+          <img 
+            src={session.user.user_metadata.avatar_url} 
+            alt="avatar"
+            style={{ width: 28, height: 28, borderRadius: '50%' }}
+          />
+        )}
         <span style={{ color: 'var(--tx2)' }}>
-          {session.user.user_metadata.full_name || session.user.email}
+          {session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email}
         </span>
         <button
           onClick={signOut}
@@ -107,7 +353,7 @@ export default function Auth({ onAuth }) {
         background: 'var(--bg)',
         padding: 40,
         borderRadius: 12,
-        maxWidth: 400,
+        maxWidth: 420,
         width: '90%',
         textAlign: 'center'
       }}>
@@ -115,10 +361,10 @@ export default function Auth({ onAuth }) {
           Roadmap App
         </h2>
         <p style={{ fontSize: 14, color: 'var(--tx2)', marginBottom: 32 }}>
-          Войди, чтобы сохранить свои данные в облаке
+          {mode === 'signup' ? 'Создайте аккаунт' : 'Войдите, чтобы сохранить данные в облаке'}
         </p>
         
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
           <button
             onClick={signInWithGoogle}
             disabled={loading}
@@ -172,6 +418,94 @@ export default function Auth({ onAuth }) {
             Войти через GitHub
           </button>
         </div>
+
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 12, 
+          marginBottom: 24,
+          color: 'var(--tx3)',
+          fontSize: 12
+        }}>
+          <div style={{ flex: 1, height: 1, background: 'var(--bd)' }} />
+          <span>или</span>
+          <div style={{ flex: 1, height: 1, background: 'var(--bd)' }} />
+        </div>
+
+        <form onSubmit={handleEmailAuth} style={{ textAlign: 'left' }}>
+          <div style={{ marginBottom: 12 }}>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="Email"
+              required
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                fontSize: 14,
+                border: '1px solid var(--bd2)',
+                borderRadius: 7,
+                background: 'var(--bg2)',
+                color: 'var(--tx)'
+              }}
+            />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Пароль"
+              required
+              minLength={6}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                fontSize: 14,
+                border: '1px solid var(--bd2)',
+                borderRadius: 7,
+                background: 'var(--bg2)',
+                color: 'var(--tx)'
+              }}
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: '12px',
+              fontSize: 14,
+              fontWeight: 600,
+              border: 'none',
+              background: 'var(--tx)',
+              color: 'var(--bg)',
+              borderRadius: 8,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              fontFamily: 'inherit',
+              marginBottom: 12,
+              opacity: loading ? 0.6 : 1
+            }}
+          >
+            {loading ? 'Загрузка...' : mode === 'signup' ? 'Зарегистрироваться' : 'Войти'}
+          </button>
+        </form>
+
+        <button
+          onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'var(--tx2)',
+            fontSize: 13,
+            cursor: 'pointer',
+            textDecoration: 'underline',
+            fontFamily: 'inherit'
+          }}
+        >
+          {mode === 'signin' ? 'Нет аккаунта? Зарегистрируйтесь' : 'Уже есть аккаунт? Войдите'}
+        </button>
       </div>
     </div>
   )
