@@ -29,3 +29,7 @@ Thumbs.db
 .env.local
 .env.production.local
 .env.development.local
+
+# OAuth secrets
+client_secret_*.json
+oauth2.md
