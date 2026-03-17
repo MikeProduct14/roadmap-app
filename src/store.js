@@ -77,22 +77,41 @@ export async function loadStateFromSupabase(userId) {
 export async function saveStateToSupabase(userId, state) {
   if (!isSupabaseConfigured() || !supabase) return
 
-  try {
-    const { error } = await supabase
-      .from('roadmaps')
-      .upsert({
-        user_id: userId,
-        epics: state.epics,
-        tasks: state.tasks,
-        next_epic_id: state.nextEpicId,
-        next_task_id: state.nextTaskId,
-        settings: state.settings,
-        updated_at: new Date().toISOString()
-      })
+  const payload = {
+    epics: state.epics,
+    tasks: state.tasks,
+    next_epic_id: state.nextEpicId,
+    next_task_id: state.nextTaskId,
+    settings: state.settings,
+    updated_at: new Date().toISOString()
+  }
 
-    if (error) throw error
-  } catch (err) {
-    console.error('Error saving to Supabase:', err)
+  // Сначала проверяем — есть ли уже запись
+  const { data: existing } = await supabase
+    .from('roadmaps')
+    .select('id')
+    .eq('user_id', userId)
+    .single()
+
+  let error
+  if (existing?.id) {
+    // Запись есть — обновляем по id
+    const res = await supabase
+      .from('roadmaps')
+      .update(payload)
+      .eq('user_id', userId)
+    error = res.error
+  } else {
+    // Записи нет — создаём
+    const res = await supabase
+      .from('roadmaps')
+      .insert({ user_id: userId, ...payload })
+    error = res.error
+  }
+
+  if (error) {
+    console.error('[supabase] save error:', error)
+    throw error
   }
 }
 

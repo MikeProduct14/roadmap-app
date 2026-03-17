@@ -21,7 +21,6 @@ const TABS = [
 
 function useStore(user) {
   const [state, setState] = useState(() => loadState())
-  // БАГ 6 FIX: loading=true пока user не определён или данные грузятся
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -29,32 +28,17 @@ function useStore(user) {
       setLoading(true)
       loadStateFromSupabase(user.id).then(cloudData => {
         if (cloudData) {
-          const localUpdatedAt = localStorage.getItem('rm_updated_at')
-          const cloudUpdatedAt = cloudData._updatedAt
           const { _updatedAt, ...cloudState } = cloudData
-
-          // Локальные данные новее — оставляем их и пушим в облако
-          if (localUpdatedAt && cloudUpdatedAt && new Date(localUpdatedAt) > new Date(cloudUpdatedAt)) {
-            setState(prev => {
-              saveStateToSupabase(user.id, prev)
-              return prev
-            })
-          } else if (!cloudUpdatedAt && localUpdatedAt) {
-            // Облако есть, но без метки — доверяем локальным
-            setState(prev => {
-              saveStateToSupabase(user.id, prev)
-              return prev
-            })
-          } else {
-            // Облачные данные новее — берём их, но НЕ перезаписываем rm_updated_at
-            setState(cloudState)
-            // Сохраняем данные в localStorage без обновления временной метки
-            saveStateWithoutTimestamp(cloudState)
-          }
+          console.log('[store] loaded from Supabase, tasks:', cloudState.tasks?.length)
+          setState(cloudState)
+          saveStateWithoutTimestamp(cloudState)
         } else {
           // Нет данных в Supabase — пушим локальные
+          console.log('[store] no Supabase data, pushing local state')
           setState(prev => {
-            saveStateToSupabase(user.id, prev)
+            saveStateToSupabase(user.id, prev).then(() => {
+              console.log('[store] local state pushed to Supabase')
+            })
             return prev
           })
         }
@@ -68,9 +52,14 @@ function useStore(user) {
   const update = useCallback(updater => {
     setState(prev => {
       const next = updater(prev)
-      saveState(next) // Always save to localStorage
+      saveState(next)
+      console.log('[store] saveState called, tasks:', next.tasks?.length)
       if (user && isSupabaseConfigured()) {
-        saveStateToSupabase(user.id, next) // Also save to Supabase
+        saveStateToSupabase(user.id, next).then(() => {
+          console.log('[store] saved to Supabase OK, tasks:', next.tasks?.length)
+        }).catch(err => {
+          console.error('[store] Supabase save error:', err)
+        })
       }
       return next
     })
