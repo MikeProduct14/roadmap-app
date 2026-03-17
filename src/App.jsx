@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react'
 import { loadState, saveState, loadStateFromSupabase, saveStateToSupabase } from './store.js'
-import { isSupabaseConfigured } from './supabase.js'
-import Auth from './Auth.jsx'
+import { isSupabaseConfigured, supabase } from './supabase.js'
+import Auth, { LoginScreen } from './Auth.jsx'
 import Modal from './Modal.jsx'
 import EpicsView from './EpicsView.jsx'
 import GanttView from './GanttView.jsx'
@@ -61,15 +61,44 @@ function useStore(user) {
 
 export default function App() {
   const [user, setUser] = useState(null)
+  const [authReady, setAuthReady] = useState(false)
   const { state, update, loading } = useStore(user)
   const { epics, tasks, nextEpicId, nextTaskId, settings } = state
 
   const [tab, setTab] = useState('epics')
-  const [modal, setModal] = useState(null) // { mode, ctx }
+  const [modal, setModal] = useState(null)
+
+  // Управление сессией — один раз, здесь, стабильно
+  useEffect(() => {
+    if (!isSupabaseConfigured() || !supabase) {
+      setAuthReady(true)
+      return
+    }
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      setAuthReady(true)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // Пока не знаем статус сессии — ничего не рендерим
+  if (!authReady) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'var(--tx2)' }}>
+        Загрузка...
+      </div>
+    )
+  }
 
   // Show auth screen if Supabase is configured but user is not logged in
   if (isSupabaseConfigured() && !user) {
-    return <Auth onAuth={u => { setUser(u) }} />
+    return <LoginScreen />
   }
 
   if (loading) {
@@ -219,7 +248,7 @@ export default function App() {
             {epics.length} эпиков · {tasks.length} задач
           </span>
         </div>
-        {user && <Auth onAuth={setUser} />}
+        {user && <Auth user={user} />}
       </div>
 
       {/* Tabs */}

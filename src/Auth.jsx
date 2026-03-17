@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { supabase, isSupabaseConfigured } from './supabase.js'
 
 const inp = {
@@ -8,10 +8,13 @@ const inp = {
 }
 
 async function checkProfile(userId) {
-  const { data } = await supabase.from('profiles').select('phone,role').eq('id', userId).single()
-  return data && data.phone && data.role
+  try {
+    const { data } = await supabase.from('profiles').select('phone,role').eq('id', userId).single()
+    return data && data.phone && data.role
+  } catch { return false }
 }
 
+// Форма заполнения профиля после первого входа
 function ProfileForm({ user, onComplete }) {
   const [form, setForm] = useState({
     email: user.email || '',
@@ -76,151 +79,72 @@ function ProfileForm({ user, onComplete }) {
   )
 }
 
-export default function Auth({ onAuth }) {
+// Экран логина (показывается когда user === null)
+export function LoginScreen() {
   const [loading, setLoading] = useState(false)
-  const [session, setSession] = useState(null)
-  const [needsProfile, setNeedsProfile] = useState(false)
   const [mode, setMode] = useState('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  // БАГ 4 FIX: флаг чтобы не делать двойную проверку профиля
-  const profileChecked = useRef(false)
 
-  const handleSession = async (sess) => {
-    if (!sess) return
-    // БАГ 4 FIX: проверяем профиль только один раз за сессию
-    if (profileChecked.current) return
-    profileChecked.current = true
-    setSession(sess)
-    const hasProfile = await checkProfile(sess.user.id)
-    if (!hasProfile) {
-      setNeedsProfile(true)
-    } else {
-      onAuth(sess.user)
-    }
-  }
-
-  useEffect(() => {
-    if (!isSupabaseConfigured() || !supabase) return
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) handleSession(session)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) handleSession(session)
-      else {
-        profileChecked.current = false
-        setSession(null)
-        setNeedsProfile(false)
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  // БАГ 3 FIX: правильный redirectTo с учётом base path GitHub Pages
   const getRedirectUrl = () => {
-    const base = window.location.origin
-    const path = window.location.pathname.replace(/\/$/, '')
-    // Если деплой на GitHub Pages — путь будет /roadmap-app
-    return `${base}${path}/`
+    const { origin, pathname } = window.location
+    const base = pathname.replace(/\/$/, '').replace(/\/[^/]*$/, '') || pathname.replace(/\/$/, '')
+    // На GitHub Pages pathname = /roadmap-app/, локально = /
+    return `${origin}${pathname.endsWith('/') ? pathname : pathname + '/'}`
   }
 
   const signInWithGoogle = async () => {
-    if (!supabase) return
-    setLoading(true) // БАГ 9 FIX: не сбрасываем loading — редирект уйдёт со страницы
+    setLoading(true)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: getRedirectUrl() }
     })
-    if (error) {
-      alert('Ошибка входа: ' + error.message)
-      setLoading(false)
-    }
+    if (error) { alert('Ошибка: ' + error.message); setLoading(false) }
+    // loading остаётся true — страница уйдёт на редирект
   }
 
   const signInWithGithub = async () => {
-    if (!supabase) return
     setLoading(true)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: { redirectTo: getRedirectUrl() }
     })
-    if (error) {
-      alert('Ошибка входа: ' + error.message)
-      setLoading(false)
-    }
+    if (error) { alert('Ошибка: ' + error.message); setLoading(false) }
   }
 
-  // БАГ 2 FIX: после email signup не блокируем UI — показываем сообщение и даём войти
   const handleEmailAuth = async (e) => {
     e.preventDefault()
-    if (!supabase || !email || !password) return
     setLoading(true)
-
     if (mode === 'signup') {
       const { data, error } = await supabase.auth.signUp({ email, password })
       if (error) {
         alert('Ошибка регистрации: ' + error.message)
-      } else if (data.session) {
-        // Email confirmation отключён — сразу получаем сессию
-        await handleSession(data.session)
-      } else {
-        // Email confirmation включён
+        setLoading(false)
+      } else if (!data.session) {
         alert('Письмо отправлено! Подтвердите email и войдите.')
         setMode('signin')
+        setLoading(false)
       }
+      // если data.session есть — onAuthStateChange в App сам подхватит
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) alert('Ошибка входа: ' + error.message)
+      if (error) { alert('Ошибка входа: ' + error.message); setLoading(false) }
+      // успех — onAuthStateChange в App сам подхватит
     }
-
-    setLoading(false)
   }
 
-  const signOut = async () => {
-    if (!supabase) return
-    profileChecked.current = false
-    await supabase.auth.signOut()
-    setSession(null)
-    setNeedsProfile(false)
-    onAuth(null)
-  }
-
-  // БАГ 8 FIX: передаём актуальный user из session
-  if (session && needsProfile) {
-    return <ProfileForm user={session.user} onComplete={() => {
-      setNeedsProfile(false)
-      onAuth(session.user)
-    }} />
-  }
-
-  if (session) {
-    const meta = session.user.user_metadata || {}
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', background: 'var(--bg2)', borderRadius: 8, fontSize: 13 }}>
-        {meta.avatar_url && <img src={meta.avatar_url} alt="avatar" style={{ width: 28, height: 28, borderRadius: '50%' }} />}
-        <span style={{ color: 'var(--tx2)' }}>{meta.full_name || meta.name || session.user.email}</span>
-        <button onClick={signOut} style={{ padding: '4px 12px', fontSize: 12, border: '1px solid var(--bd)', background: 'transparent', color: 'var(--tx2)', borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit' }}>
-          Выйти
-        </button>
-      </div>
-    )
-  }
-
-  const oauthBtnBase = { padding: '12px 24px', fontSize: 14, fontWeight: 500, borderRadius: 8, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: loading ? 0.6 : 1 }
+  const oauthBtn = { padding: '12px 24px', fontSize: 14, fontWeight: 500, borderRadius: 8, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: loading ? 0.6 : 1 }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: 'var(--bg)', padding: 40, borderRadius: 12, maxWidth: 420, width: '90%', textAlign: 'center' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+      <div style={{ background: 'var(--bg)', border: '1px solid var(--bd)', padding: 40, borderRadius: 12, maxWidth: 420, width: '90%', textAlign: 'center' }}>
         <h2 style={{ fontSize: 24, fontWeight: 600, marginBottom: 12, color: 'var(--tx)' }}>Roadmap App</h2>
         <p style={{ fontSize: 14, color: 'var(--tx2)', marginBottom: 32 }}>
           {mode === 'signup' ? 'Создайте аккаунт' : 'Войдите, чтобы сохранить данные в облаке'}
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
-          <button onClick={signInWithGoogle} disabled={loading} style={{ ...oauthBtnBase, border: '1px solid var(--bd)', background: 'white', color: '#333' }}>
+          <button onClick={signInWithGoogle} disabled={loading} style={{ ...oauthBtn, border: '1px solid var(--bd)', background: 'white', color: '#333' }}>
             <svg width="18" height="18" viewBox="0 0 18 18">
               <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
               <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
@@ -229,7 +153,7 @@ export default function Auth({ onAuth }) {
             </svg>
             {loading ? 'Перенаправление...' : 'Войти через Google'}
           </button>
-          <button onClick={signInWithGithub} disabled={loading} style={{ ...oauthBtnBase, border: '1px solid var(--bd)', background: '#24292e', color: 'white' }}>
+          <button onClick={signInWithGithub} disabled={loading} style={{ ...oauthBtn, border: '1px solid var(--bd)', background: '#24292e', color: 'white' }}>
             <svg width="18" height="18" viewBox="0 0 16 16" fill="white">
               <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
             </svg>
@@ -238,9 +162,7 @@ export default function Auth({ onAuth }) {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, color: 'var(--tx3)', fontSize: 12 }}>
-          <div style={{ flex: 1, height: 1, background: 'var(--bd)' }} />
-          <span>или</span>
-          <div style={{ flex: 1, height: 1, background: 'var(--bd)' }} />
+          <div style={{ flex: 1, height: 1, background: 'var(--bd)' }} /><span>или</span><div style={{ flex: 1, height: 1, background: 'var(--bd)' }} />
         </div>
 
         <form onSubmit={handleEmailAuth} style={{ textAlign: 'left' }}>
@@ -254,11 +176,44 @@ export default function Auth({ onAuth }) {
             {loading ? 'Загрузка...' : mode === 'signup' ? 'Зарегистрироваться' : 'Войти'}
           </button>
         </form>
-
-        <button onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')} style={{ background: 'none', border: 'none', color: 'var(--tx2)', fontSize: 13, cursor: 'pointer', textDecoration: 'underline', fontFamily: 'inherit' }}>
+        <button onClick={() => setMode(m => m === 'signin' ? 'signup' : 'signin')} style={{ background: 'none', border: 'none', color: 'var(--tx2)', fontSize: 13, cursor: 'pointer', textDecoration: 'underline', fontFamily: 'inherit' }}>
           {mode === 'signin' ? 'Нет аккаунта? Зарегистрируйтесь' : 'Уже есть аккаунт? Войдите'}
         </button>
       </div>
+    </div>
+  )
+}
+
+// Аватар + кнопка выхода в хедере (показывается когда user залогинен)
+export default function Auth({ user }) {
+  const [needsProfile, setNeedsProfile] = useState(false)
+  const [profileChecked, setProfileChecked] = useState(false)
+
+  useEffect(() => {
+    if (!user || profileChecked) return
+    setProfileChecked(true)
+    checkProfile(user.id).then(hasProfile => {
+      if (!hasProfile) setNeedsProfile(true)
+    })
+  }, [user, profileChecked])
+
+  const signOut = async () => {
+    await supabase.auth.signOut()
+    // onAuthStateChange в App сам обнулит user
+  }
+
+  if (needsProfile) {
+    return <ProfileForm user={user} onComplete={() => setNeedsProfile(false)} />
+  }
+
+  const meta = user?.user_metadata || {}
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', background: 'var(--bg2)', borderRadius: 8, fontSize: 13 }}>
+      {meta.avatar_url && <img src={meta.avatar_url} alt="avatar" style={{ width: 28, height: 28, borderRadius: '50%' }} />}
+      <span style={{ color: 'var(--tx2)' }}>{meta.full_name || meta.name || user.email}</span>
+      <button onClick={signOut} style={{ padding: '4px 12px', fontSize: 12, border: '1px solid var(--bd)', background: 'transparent', color: 'var(--tx2)', borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit' }}>
+        Выйти
+      </button>
     </div>
   )
 }
