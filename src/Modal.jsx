@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from 'react'
-import { SPRINTS, EPIC_COLORS, STATUS_LABELS, PRIO_LABELS, EFFORT_LABELS, SPHERE_LABELS, ART_TYPES, STORY_POINTS } from './store.js'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { SPRINTS, EPIC_COLORS, STATUS_LABELS, PRIO_LABELS, EFFORT_LABELS, ART_TYPES } from './store.js'
+
+const ALLOWED_FILE_TYPES = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/markdown', 'text/plain']
+const ALLOWED_EXT = ['.pdf', '.docx', '.md', '.xls', '.xlsx']
 
 const s = {
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 40, zIndex: 300 },
-  modal: { background: 'var(--bg)', border: '0.5px solid var(--bd2)', borderRadius: 'var(--radius)', width: '100%', maxWidth: 560, maxHeight: '85vh', position: 'relative', display: 'flex', flexDirection: 'column' },
+  modal: { background: 'var(--bg)', border: '0.5px solid var(--bd2)', borderRadius: 'var(--radius)', width: '100%', maxWidth: 580, maxHeight: '85vh', position: 'relative', display: 'flex', flexDirection: 'column' },
   modalContent: { overflowY: 'auto', padding: '24px 26px', flex: 1 },
-  h: { fontSize: 17, fontWeight: 600, marginBottom: 20, color: 'var(--tx)' },
+  h: { fontSize: 17, fontWeight: 600, marginBottom: 4, color: 'var(--tx)' },
+  autoSaveHint: { fontSize: 11, color: 'var(--tx3)', marginBottom: 16 },
   label: { display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 6, fontWeight: 500 },
   input: { width: '100%', fontSize: 14, padding: '9px 12px', borderRadius: 7, border: '1px solid var(--bd2)', background: 'var(--bg2)', color: 'var(--tx)' },
   row: { marginBottom: 14 },
@@ -26,6 +30,8 @@ const s = {
   timeLogRow: { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6, fontSize: 12 },
   timeLogBox: { background: 'var(--bg2)', padding: 10, borderRadius: 7, marginBottom: 6, border: '1px solid var(--bd)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   addTimeBtn: { fontSize: 12, padding: '6px 12px', borderRadius: 6, border: '1px solid var(--bd2)', background: 'var(--bg2)', color: 'var(--tx2)', cursor: 'pointer', fontFamily: 'inherit', marginTop: 6 },
+  fileAttachBtn: { fontSize: 11, padding: '4px 10px', borderRadius: 5, border: '1px dashed var(--bd2)', background: 'transparent', color: 'var(--tx3)', cursor: 'pointer', fontFamily: 'inherit', marginLeft: 6 },
+  attachedFile: { display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, padding: '3px 8px', borderRadius: 5, background: 'var(--bg2)', border: '1px solid var(--bd)', color: 'var(--tx2)', marginRight: 6, marginTop: 4 },
 }
 
 function Field({ label, children }) {
@@ -63,14 +69,98 @@ function ArtifactEditor({ arts, onChange }) {
   )
 }
 
+// Converts file to base64 data URL for storage
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = e => resolve(e.target.result)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+function FileAttachment({ attachments, onChange }) {
+  const fileInputRef = useRef(null)
+
+  const handleFileSelect = async (e) => {
+    const files = Array.from(e.target.files)
+    const newAttachments = []
+    for (const file of files) {
+      const ext = '.' + file.name.split('.').pop().toLowerCase()
+      if (!ALLOWED_EXT.includes(ext)) {
+        alert(`Формат ${ext} не поддерживается. Разрешены: ${ALLOWED_EXT.join(', ')}`)
+        continue
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`Файл ${file.name} слишком большой (макс. 5 МБ)`)
+        continue
+      }
+      const dataUrl = await readFileAsDataURL(file)
+      newAttachments.push({ name: file.name, size: file.size, type: ext.slice(1), dataUrl })
+    }
+    if (newAttachments.length > 0) {
+      onChange([...attachments, ...newAttachments])
+    }
+    e.target.value = ''
+  }
+
+  const remove = (i) => onChange(attachments.filter((_, j) => j !== i))
+
+  const formatSize = (bytes) => bytes < 1024 ? `${bytes} Б` : bytes < 1024 * 1024 ? `${Math.round(bytes / 1024)} КБ` : `${(bytes / 1024 / 1024).toFixed(1)} МБ`
+
+  return (
+    <div style={s.row}>
+      <label style={s.label}>Прикреплённые файлы (PDF, DOCX, MD, XLS, XLSX — до 5 МБ)</label>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: attachments.length ? 8 : 0 }}>
+        {attachments.map((f, i) => (
+          <span key={i} style={s.attachedFile}>
+            📎 {f.name}
+            <span style={{ color: 'var(--tx3)', marginLeft: 2 }}>({formatSize(f.size)})</span>
+            {f.dataUrl && (
+              <a href={f.dataUrl} download={f.name} style={{ color: 'var(--tx3)', marginLeft: 4, textDecoration: 'none' }} title="Скачать">↓</a>
+            )}
+            <button onClick={() => remove(i)} style={{ ...s.artRm, fontSize: 14, padding: '0 2px', minWidth: 18, minHeight: 18 }}>×</button>
+          </span>
+        ))}
+      </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept=".pdf,.docx,.md,.xls,.xlsx"
+        style={{ display: 'none' }}
+        onChange={handleFileSelect}
+      />
+      <button style={s.addArt} onClick={() => fileInputRef.current?.click()}>
+        📎 Прикрепить файл
+      </button>
+    </div>
+  )
+}
+
 function CommentsSection({ comments, onChange }) {
   const [newComment, setNewComment] = useState('')
+  const fileInputRef = useRef(null)
 
-  const addComment = () => {
+  const addComment = (attachedFiles = []) => {
     const trimmed = newComment.trim()
-    if (!trimmed) return
-    onChange([...comments, { text: trimmed, date: new Date().toISOString() }])
+    if (!trimmed && attachedFiles.length === 0) return
+    onChange([...comments, { text: trimmed, date: new Date().toISOString(), files: attachedFiles }])
     setNewComment('')
+  }
+
+  const handleFileAttach = async (e) => {
+    const files = Array.from(e.target.files)
+    const attached = []
+    for (const file of files) {
+      const ext = '.' + file.name.split('.').pop().toLowerCase()
+      if (!ALLOWED_EXT.includes(ext)) continue
+      if (file.size > 5 * 1024 * 1024) { alert(`Файл ${file.name} слишком большой`); continue }
+      const dataUrl = await readFileAsDataURL(file)
+      attached.push({ name: file.name, size: file.size, dataUrl })
+    }
+    if (attached.length > 0) addComment(attached)
+    e.target.value = ''
   }
 
   const removeComment = (i) => {
@@ -79,28 +169,19 @@ function CommentsSection({ comments, onChange }) {
   }
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-      addComment()
-    }
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) addComment()
   }
 
-  // Simple markdown renderer
   const renderMarkdown = (text) => {
-    let html = text
-      // Bold: **text** or __text__
+    if (!text) return ''
+    return text
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/__(.+?)__/g, '<strong>$1</strong>')
-      // Italic: *text* or _text_
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
       .replace(/_(.+?)_/g, '<em>$1</em>')
-      // Code: `code`
       .replace(/`(.+?)`/g, '<code style="background: var(--bg3); padding: 2px 4px; border-radius: 3px; font-size: 12px;">$1</code>')
-      // Links: [text](url)
       .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #378ADD; text-decoration: underline;">$1</a>')
-      // Line breaks
       .replace(/\n/g, '<br/>')
-    
-    return html
   }
 
   return (
@@ -112,20 +193,30 @@ function CommentsSection({ comments, onChange }) {
             <span style={s.commentDate}>{new Date(c.date).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
             <button style={{ ...s.artRm, fontSize: 16 }} onClick={() => removeComment(i)} title="Удалить">×</button>
           </div>
-          <div 
-            style={s.commentText} 
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(c.text) }}
-          />
+          {c.text && <div style={s.commentText} dangerouslySetInnerHTML={{ __html: renderMarkdown(c.text) }} />}
+          {c.files?.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
+              {c.files.map((f, fi) => (
+                <a key={fi} href={f.dataUrl} download={f.name} style={{ ...s.attachedFile, textDecoration: 'none' }}>
+                  📎 {f.name}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       ))}
-      <textarea 
-        value={newComment} 
-        onChange={e => setNewComment(e.target.value)} 
+      <textarea
+        value={newComment}
+        onChange={e => setNewComment(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Добавить комментарий... (Ctrl+Enter для отправки)&#10;Поддерживается: **жирный**, *курсив*, `код`, [ссылка](url)" 
-        style={{ ...s.input, minHeight: 60, resize: 'vertical', marginBottom: 6 }} 
+        placeholder="Добавить комментарий... (Ctrl+Enter для отправки)&#10;Поддерживается: **жирный**, *курсив*, `код`, [ссылка](url)"
+        style={{ ...s.input, minHeight: 60, resize: 'vertical', marginBottom: 6 }}
       />
-      <button style={s.addCommentBtn} onClick={addComment}>Добавить комментарий</button>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <button style={s.addCommentBtn} onClick={() => addComment()}>Добавить комментарий</button>
+        <input ref={fileInputRef} type="file" multiple accept=".pdf,.docx,.md,.xls,.xlsx" style={{ display: 'none' }} onChange={handleFileAttach} />
+        <button style={s.fileAttachBtn} onClick={() => fileInputRef.current?.click()} title="Прикрепить файл к комментарию">📎 Файл</button>
+      </div>
     </div>
   )
 }
@@ -134,10 +225,7 @@ function TimeLogSection({ timeLog, onChange }) {
   const [newLog, setNewLog] = useState({ date: new Date().toISOString().split('T')[0], hours: '', comment: '' })
 
   const addLog = () => {
-    if (!newLog.hours || parseFloat(newLog.hours) <= 0) {
-      alert('Укажите количество часов')
-      return
-    }
+    if (!newLog.hours || parseFloat(newLog.hours) <= 0) { alert('Укажите количество часов'); return }
     onChange([...timeLog, { ...newLog, hours: parseFloat(newLog.hours) }])
     setNewLog({ date: new Date().toISOString().split('T')[0], hours: '', comment: '' })
   }
@@ -164,27 +252,9 @@ function TimeLogSection({ timeLog, onChange }) {
         </div>
       ))}
       <div style={s.timeLogRow}>
-        <input 
-          type="date" 
-          value={newLog.date} 
-          onChange={e => setNewLog({ ...newLog, date: e.target.value })} 
-          style={{ ...s.input, flex: 1 }} 
-        />
-        <input 
-          type="number" 
-          min="0.5" 
-          step="0.5" 
-          value={newLog.hours} 
-          onChange={e => setNewLog({ ...newLog, hours: e.target.value })} 
-          placeholder="Часы" 
-          style={{ ...s.input, width: 80 }} 
-        />
-        <input 
-          value={newLog.comment} 
-          onChange={e => setNewLog({ ...newLog, comment: e.target.value })} 
-          placeholder="Комментарий (опц.)" 
-          style={{ ...s.input, flex: 2 }} 
-        />
+        <input type="date" value={newLog.date} onChange={e => setNewLog({ ...newLog, date: e.target.value })} style={{ ...s.input, flex: 1 }} />
+        <input type="number" min="0.5" step="0.5" value={newLog.hours} onChange={e => setNewLog({ ...newLog, hours: e.target.value })} placeholder="Часы" style={{ ...s.input, width: 80 }} />
+        <input value={newLog.comment} onChange={e => setNewLog({ ...newLog, comment: e.target.value })} placeholder="Комментарий (опц.)" style={{ ...s.input, flex: 2 }} />
       </div>
       <button style={s.addTimeBtn} onClick={addLog}>+ Добавить время</button>
     </div>
@@ -194,23 +264,26 @@ function TimeLogSection({ timeLog, onChange }) {
 export default function Modal({ mode, ctx, epics, settings, onSave, onDelete, onClose }) {
   const isEpic = mode === 'epic' || mode === 'epic-edit'
   const isEdit = mode === 'epic-edit' || mode === 'task-edit'
+  const autoSaveTimer = useRef(null)
+  const [savedAt, setSavedAt] = useState(null)
 
-  const [form, setForm] = useState(() => {
+  const initForm = useCallback(() => {
     if (isEpic) {
       return ctx && mode === 'epic-edit'
         ? { name: ctx.name, color: ctx.color, sprint: ctx.sprint, startW: ctx.startW, durW: ctx.durW }
         : { name: '', color: EPIC_COLORS[0], sprint: 'Sprint 1', startW: 0, durW: 2 }
     } else {
       return ctx && mode === 'task-edit'
-        ? { 
-            name: ctx.name, 
-            status: ctx.status, 
-            priority: ctx.priority, 
-            sprint: ctx.sprint, 
-            effort: ctx.effort, 
-            deadline: ctx.deadline || '', 
-            description: ctx.description || ctx.notes || '', 
+        ? {
+            name: ctx.name,
+            status: ctx.status,
+            priority: ctx.priority,
+            sprint: ctx.sprint,
+            effort: ctx.effort,
+            deadline: ctx.deadline || '',
+            description: ctx.description || ctx.notes || '',
             artifacts: JSON.parse(JSON.stringify(ctx.artifacts || [])),
+            attachments: ctx.attachments || [],
             comments: ctx.comments || [],
             epicId: ctx.epicId,
             assignee: ctx.assignee || 'Не назначен',
@@ -218,15 +291,16 @@ export default function Modal({ mode, ctx, epics, settings, onSave, onDelete, on
             estimateHours: ctx.estimateHours || 0,
             timeLog: ctx.timeLog || []
           }
-        : { 
-            name: '', 
-            status: 'backlog', 
-            priority: 'medium', 
-            sprint: ctx?.sprint || 'Sprint 1', 
-            effort: 'M', 
-            deadline: '', 
-            description: '', 
+        : {
+            name: '',
+            status: 'backlog',
+            priority: 'medium',
+            sprint: ctx?.sprint || 'Sprint 1',
+            effort: 'M',
+            deadline: '',
+            description: '',
             artifacts: [],
+            attachments: [],
             comments: [],
             epicId: ctx?.epicId || (epics && epics[0]?.id) || '',
             assignee: 'Не назначен',
@@ -235,72 +309,94 @@ export default function Modal({ mode, ctx, epics, settings, onSave, onDelete, on
             timeLog: []
           }
     }
-  })
+  }, []) // eslint-disable-line
+
+  const [form, setForm] = useState(initForm)
+
+  // Auto-save on blur: debounce 800ms after last change
+  const triggerAutoSave = useCallback((currentForm) => {
+    if (!isEdit || !currentForm.name?.trim()) return
+    clearTimeout(autoSaveTimer.current)
+    autoSaveTimer.current = setTimeout(() => {
+      onSave(currentForm, true)
+      setSavedAt(new Date())
+    }, 800)
+  }, [isEdit, onSave])
+
+  useEffect(() => () => clearTimeout(autoSaveTimer.current), [])
 
   // Handle Escape key
   useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape') {
-        onClose()
-      }
-    }
+    const handleEscape = (e) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', handleEscape)
     return () => window.removeEventListener('keydown', handleEscape)
   }, [onClose])
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const set = (k, v) => {
+    setForm(f => {
+      const next = { ...f, [k]: v }
+      triggerAutoSave(next)
+      return next
+    })
+  }
 
   const handleSave = () => {
-    if (!form.name.trim()) {
-      alert('Название не может быть пустым')
-      return
-    }
+    if (!form.name.trim()) { alert('Название не может быть пустым'); return }
+    clearTimeout(autoSaveTimer.current)
     onSave(form)
   }
+
+  // For new tasks — no autosave, just regular save
+  const isNewTask = !isEdit
 
   return (
     <div style={s.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={s.modal}>
         <button style={s.closeX} onClick={onClose}>×</button>
-        
+
         <div style={s.modalContent}>
-          <div style={s.h}>{mode === 'epic' ? 'Новый эпик' : mode === 'epic-edit' ? 'Редактировать эпик' : mode === 'task-edit' ? 'Редактировать задачу' : 'Новая задача'}</div>
+          <div style={s.h}>
+            {mode === 'epic' ? 'Новый эпик' : mode === 'epic-edit' ? 'Редактировать эпик' : mode === 'task-edit' ? 'Редактировать задачу' : 'Новая задача'}
+          </div>
+          {isEdit && (
+            <div style={s.autoSaveHint}>
+              {savedAt ? `✓ Сохранено в ${savedAt.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}` : 'Автосохранение при изменении полей'}
+            </div>
+          )}
 
           <Field label="Название">
-            <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Название..." style={s.input} autoFocus />
+            <input
+              value={form.name}
+              onChange={e => set('name', e.target.value)}
+              placeholder="Название..."
+              style={s.input}
+              autoFocus
+            />
           </Field>
 
           {isEpic ? (
-            <>
-              <div style={s.grid2}>
-                <Field label="Спринт"><Sel value={form.sprint} onChange={v => set('sprint', v)} options={SPRINTS.map(s => [s, s])} /></Field>
-                <Field label="Цвет">
-                  <select value={form.color} onChange={e => set('color', e.target.value)} style={s.input}>
-                    {EPIC_COLORS.map(c => <option key={c} value={c} style={{ background: c, color: '#fff' }}>{c}</option>)}
-                  </select>
-                </Field>
-                <Field label="Начало (неделя от старта)">
-                  <input type="number" min={0} max={15} value={form.startW} onChange={e => set('startW', +e.target.value)} style={s.input} />
-                </Field>
-                <Field label="Длительность (нед.)">
-                  <input type="number" min={1} max={16} value={form.durW} onChange={e => set('durW', +e.target.value)} style={s.input} />
-                </Field>
-              </div>
-            </>
+            <div style={s.grid2}>
+              <Field label="Спринт"><Sel value={form.sprint} onChange={v => set('sprint', v)} options={SPRINTS.map(s => [s, s])} /></Field>
+              <Field label="Цвет">
+                <select value={form.color} onChange={e => set('color', e.target.value)} style={s.input}>
+                  {EPIC_COLORS.map(c => <option key={c} value={c} style={{ background: c, color: '#fff' }}>{c}</option>)}
+                </select>
+              </Field>
+              <Field label="Начало (неделя от старта)">
+                <input type="number" min={0} max={15} value={form.startW} onChange={e => set('startW', +e.target.value)} style={s.input} />
+              </Field>
+              <Field label="Длительность (нед.)">
+                <input type="number" min={1} max={16} value={form.durW} onChange={e => set('durW', +e.target.value)} style={s.input} />
+              </Field>
+            </div>
           ) : (
             <>
               {!isEdit && (
                 <Field label="Эпик">
                   <select value={form.epicId} onChange={e => set('epicId', e.target.value)} style={s.input}>
-                    {epics && epics.length > 0 ? (
-                      epics.map(ep => (
-                        <option key={ep.id} value={ep.id}>
-                          {ep.name} ({ep.sprint})
-                        </option>
-                      ))
-                    ) : (
-                      <option value="">Нет доступных эпиков</option>
-                    )}
+                    {epics && epics.length > 0
+                      ? epics.map(ep => <option key={ep.id} value={ep.id}>{ep.name} ({ep.sprint})</option>)
+                      : <option value="">Нет доступных эпиков</option>}
                   </select>
                 </Field>
               )}
@@ -324,30 +420,31 @@ export default function Modal({ mode, ctx, epics, settings, onSave, onDelete, on
                     ))}
                   </select>
                 </Field>
-                <Field label="Дедлайн"><input type="date" value={form.deadline} onChange={e => set('deadline', e.target.value)} style={s.input} /></Field>
+                <Field label="Дедлайн">
+                  <input type="date" value={form.deadline} onChange={e => set('deadline', e.target.value)} style={s.input} />
+                </Field>
               </div>
               <div style={s.grid2}>
                 {settings?.useStoryPoints ? (
                   <Field label="Story Points">
-                    <select value={form.storyPoints} onChange={e => set('storyPoints', +e.target.value)} style={s.input}>
-                      {STORY_POINTS.map(sp => <option key={sp} value={sp}>{sp}</option>)}
-                    </select>
+                    <input type="number" min="0" max="100" value={form.storyPoints} onChange={e => set('storyPoints', +e.target.value)} style={s.input} placeholder="0" />
                   </Field>
                 ) : (
                   <Field label="Оценка (часы)">
-                    <input type="number" min="0" step="0.5" value={form.estimateHours} onChange={e => set('estimateHours', +e.target.value)} style={s.input} />
+                    <input type="number" min="0" step="0.5" value={form.estimateHours} onChange={e => set('estimateHours', +e.target.value)} style={s.input} placeholder="0" />
                   </Field>
                 )}
                 <div />
               </div>
               <Field label="Описание">
-                <textarea 
-                  value={form.description} 
-                  onChange={e => set('description', e.target.value)} 
-                  style={{ ...s.input, minHeight: form.description.length > 100 ? 120 : 70, resize: 'vertical' }} 
+                <textarea
+                  value={form.description}
+                  onChange={e => set('description', e.target.value)}
+                  style={{ ...s.input, minHeight: form.description.length > 100 ? 120 : 70, resize: 'vertical' }}
                   placeholder="Подробное описание задачи..."
                 />
               </Field>
+              <FileAttachment attachments={form.attachments || []} onChange={v => set('attachments', v)} />
               <ArtifactEditor arts={form.artifacts} onChange={v => set('artifacts', v)} />
               <TimeLogSection timeLog={form.timeLog} onChange={v => set('timeLog', v)} />
               <CommentsSection comments={form.comments} onChange={v => set('comments', v)} />
@@ -357,8 +454,9 @@ export default function Modal({ mode, ctx, epics, settings, onSave, onDelete, on
 
         <div style={s.footer}>
           {isEdit && onDelete && <button style={s.deleteBtn} onClick={onDelete}>Удалить</button>}
-          <button style={s.btn} onClick={onClose}>Отмена</button>
-          <button style={s.btnPrimary} onClick={handleSave}>Сохранить</button>
+          <button style={s.btn} onClick={onClose}>{isEdit ? 'Закрыть' : 'Отмена'}</button>
+          {isNewTask && <button style={s.btnPrimary} onClick={handleSave}>Сохранить</button>}
+          {isEdit && <button style={s.btnPrimary} onClick={handleSave}>Сохранить</button>}
         </div>
       </div>
     </div>

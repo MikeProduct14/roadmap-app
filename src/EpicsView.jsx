@@ -21,7 +21,7 @@ function ArtIcon({ type }) {
   return <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 3, background: c.bg, color: c.tx, fontWeight: 700 }}>{type.toUpperCase()}</span>
 }
 
-function TaskRow({ task, isSub, onEdit, onAddSub, onDragStart, onDragOver, onDrop, isDragging, statusLabels, priorityLabels, useStoryPoints }) {
+function TaskRow({ task, isSub, onEdit, onAddSub, onDragStart, onDragOver, onDrop, isDragging, isDragOver, statusLabels, priorityLabels, useStoryPoints, subTasks, collapsedTasks, onToggleSubtasks }) {
   const [isHovering, setIsHovering] = React.useState(false)
   
   // Check if deadline is overdue
@@ -29,16 +29,20 @@ function TaskRow({ task, isSub, onEdit, onAddSub, onDragStart, onDragOver, onDro
   
   // Check if task needs estimation
   const needsEstimation = (task.storyPoints === 0 || task.storyPoints === undefined) && (task.estimateHours === 0 || task.estimateHours === undefined)
+  
+  const hasSubtasks = subTasks && subTasks.length > 0
+  const isCollapsed = collapsedTasks && collapsedTasks[task.id]
 
   return (
     <tr 
       style={{ 
         borderBottom: '0.5px solid var(--bd)',
-        opacity: isDragging ? 0.4 : 1,
+        opacity: isDragging ? 0.5 : 1,
         cursor: 'grab',
-        background: isHovering ? 'var(--bg2)' : 'transparent',
-        transition: 'background 0.15s ease, opacity 0.2s ease',
-        transform: isDragging ? 'scale(1.02)' : 'scale(1)',
+        background: isDragOver ? 'rgba(55, 138, 221, 0.1)' : (isHovering ? 'var(--bg2)' : 'transparent'),
+        transition: 'all 0.2s ease',
+        transform: isDragging ? 'scale(1.03) rotate(2deg)' : 'scale(1)',
+        boxShadow: isDragging ? '0 8px 16px rgba(0,0,0,0.15)' : 'none',
       }}
       draggable={true}
       onDragStart={(e) => onDragStart(e, task)}
@@ -117,22 +121,40 @@ function TaskRow({ task, isSub, onEdit, onAddSub, onDragStart, onDragOver, onDro
               </div>
             )}
             {!isSub && (
-              <button 
-                onClick={(e) => { e.stopPropagation(); onAddSub(task); }} 
-                style={{ 
-                  fontSize: 10, 
-                  padding: '3px 8px', 
-                  borderRadius: 4, 
-                  border: '1px solid var(--bd2)', 
-                  background: 'transparent', 
-                  color: 'var(--tx3)', 
-                  cursor: 'pointer',
-                  marginTop: 6,
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                + подзадача
-              </button>
+              <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                {hasSubtasks && (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); onToggleSubtasks(task.id); }} 
+                    style={{ 
+                      fontSize: 10, 
+                      padding: '3px 8px', 
+                      borderRadius: 4, 
+                      border: '1px solid var(--bd2)', 
+                      background: 'transparent', 
+                      color: 'var(--tx3)', 
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {isCollapsed ? `▶ ${subTasks.length} подзадач` : `▼ ${subTasks.length} подзадач`}
+                  </button>
+                )}
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onAddSub(task); }} 
+                  style={{ 
+                    fontSize: 10, 
+                    padding: '3px 8px', 
+                    borderRadius: 4, 
+                    border: '1px solid var(--bd2)', 
+                    background: 'transparent', 
+                    color: 'var(--tx3)', 
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  + подзадача
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -165,12 +187,15 @@ export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTa
   const statusLabels = settings?.statusLabels
   const priorityLabels = settings?.priorityLabels
   const [collapsed, setCollapsed] = useState({})
+  const [collapsedTasks, setCollapsedTasks] = useState({})
   const [draggedEpic, setDraggedEpic] = useState(null)
   const [draggedTask, setDraggedTask] = useState(null)
+  const [dragOverTask, setDragOverTask] = useState(null)
   const [hoveringEpic, setHoveringEpic] = useState(null)
   const [sprintFilter, setSprintFilter] = useState('all')
 
   const toggle = id => setCollapsed(c => ({ ...c, [id]: !c[id] }))
+  const toggleSubtasks = id => setCollapsedTasks(c => ({ ...c, [id]: !c[id] }))
 
   const handleEpicDragStart = (e, epic) => {
     setDraggedEpic(epic)
@@ -201,30 +226,35 @@ export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTa
     e.stopPropagation()
   }
 
-  const handleTaskDragOver = (e) => {
+  const handleTaskDragOver = (e, targetTask) => {
     e.preventDefault()
     e.stopPropagation()
     
-    // Visual feedback: check if drop is allowed
-    if (draggedTask) {
-      const targetElement = e.currentTarget
-      const targetTask = tasks.find(t => {
-        // Find task by checking if element contains task data
-        return targetElement.querySelector(`[data-task-id="${t.id}"]`) !== null
-      })
-      
-      if (targetTask && draggedTask.epicId === targetTask.epicId && draggedTask.parentId === targetTask.parentId) {
+    if (draggedTask && targetTask) {
+      // Allow drop only within same epic and same parent level
+      if (draggedTask.epicId === targetTask.epicId && draggedTask.parentId === targetTask.parentId) {
         e.dataTransfer.dropEffect = 'move'
+        setDragOverTask(targetTask.id)
       } else {
         e.dataTransfer.dropEffect = 'none'
+        setDragOverTask(null)
       }
     }
+  }
+  
+  const handleTaskDragLeave = () => {
+    setDragOverTask(null)
   }
 
   const handleTaskDrop = (e, targetTask) => {
     e.preventDefault()
     e.stopPropagation()
-    if (!draggedTask || draggedTask.id === targetTask.id) return
+    setDragOverTask(null)
+    
+    if (!draggedTask || draggedTask.id === targetTask.id) {
+      setDraggedTask(null)
+      return
+    }
     
     // Only reorder tasks within the same epic and same parent level
     if (draggedTask.epicId === targetTask.epicId && draggedTask.parentId === targetTask.parentId) {
@@ -334,7 +364,7 @@ export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTa
               </span>
               <span style={{ width: 11, height: 11, borderRadius: '50%', background: ep.color, flexShrink: 0 }} />
               <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--tx)', flex: 1 }}>{ep.name}</span>
-              <span style={{ fontSize: 12, color: 'var(--tx3)', whiteSpace: 'nowrap' }}>{ep.sprint} · {rootTasks.length} задач</span>
+              <span style={{ fontSize: 12, color: 'var(--tx3)', whiteSpace: 'nowrap' }}>{ep.sprint} · {allEpicTasks.length} задач</span>
               <div style={{ width: 90, height: 4, background: 'var(--bd)', borderRadius: 2, overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: `${prog}%`, background: ep.color, borderRadius: 2, transition: 'width .3s' }} />
               </div>
@@ -366,39 +396,51 @@ export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTa
                     </tr>
                   </thead>
                   <tbody>
-                    {rootTasks.map(t => (
-                      <React.Fragment key={t.id}>
-                        <TaskRow 
-                          task={t} 
-                          isSub={false} 
-                          onEdit={onEditTask} 
-                          onAddSub={onAddSub}
-                          onDragStart={handleTaskDragStart}
-                          onDragOver={handleTaskDragOver}
-                          onDrop={handleTaskDrop}
-                          isDragging={draggedTask?.id === t.id}
-                          statusLabels={statusLabels}
-                          priorityLabels={priorityLabels}
-                          useStoryPoints={settings?.useStoryPoints}
-                        />
-                        {tasks.filter(s => s.parentId === t.id).map(sub => (
+                    {rootTasks.map(t => {
+                      const subTasks = tasks.filter(s => s.parentId === t.id)
+                      const isTaskCollapsed = collapsedTasks[t.id]
+                      
+                      return (
+                        <React.Fragment key={t.id}>
                           <TaskRow 
-                            key={sub.id} 
-                            task={sub} 
-                            isSub={true} 
+                            task={t} 
+                            isSub={false} 
                             onEdit={onEditTask} 
                             onAddSub={onAddSub}
                             onDragStart={handleTaskDragStart}
-                            onDragOver={handleTaskDragOver}
+                            onDragOver={(e) => handleTaskDragOver(e, t)}
                             onDrop={handleTaskDrop}
-                            isDragging={draggedTask?.id === sub.id}
+                            isDragging={draggedTask?.id === t.id}
+                            isDragOver={dragOverTask === t.id}
                             statusLabels={statusLabels}
                             priorityLabels={priorityLabels}
                             useStoryPoints={settings?.useStoryPoints}
+                            subTasks={subTasks}
+                            collapsedTasks={collapsedTasks}
+                            onToggleSubtasks={toggleSubtasks}
                           />
-                        ))}
-                      </React.Fragment>
-                    ))}
+                          {!isTaskCollapsed && subTasks.map(sub => (
+                            <TaskRow 
+                              key={sub.id} 
+                              task={sub} 
+                              isSub={true} 
+                              onEdit={onEditTask} 
+                              onAddSub={onAddSub}
+                              onDragStart={handleTaskDragStart}
+                              onDragOver={(e) => handleTaskDragOver(e, sub)}
+                              onDrop={handleTaskDrop}
+                              isDragging={draggedTask?.id === sub.id}
+                              isDragOver={dragOverTask === sub.id}
+                              statusLabels={statusLabels}
+                              priorityLabels={priorityLabels}
+                              useStoryPoints={settings?.useStoryPoints}
+                              collapsedTasks={collapsedTasks}
+                              onToggleSubtasks={toggleSubtasks}
+                            />
+                          ))}
+                        </React.Fragment>
+                      )
+                    })}
                     {rootTasks.length === 0 && (
                       <tr><td colSpan={8} style={{ padding: '14px 16px', fontSize: 14, color: 'var(--tx3)', fontStyle: 'italic' }}>Нет задач — добавь первую</td></tr>
                     )}

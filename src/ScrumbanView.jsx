@@ -109,17 +109,22 @@ export default function ScrumbanView({ epics, tasks, onEditTask, settings }) {
     (sprintFilter === 'all' || t.sprint === sprintFilter) && !t.parentId
   )
 
-  // Group tasks by status
-  const statuses = ['backlog', 'ready', 'wip', 'done', 'frozen']
+  // Use statuses from settings (dynamic), fallback to defaults
+  const statuses = settings?.statuses || ['backlog', 'ready', 'wip', 'done', 'frozen']
   const tasksByStatus = statuses.reduce((acc, status) => {
     acc[status] = filteredTasks.filter(t => t.status === status)
     return acc
   }, {})
+  // Tasks with unknown/custom status not in columns
+  const knownStatuses = new Set(statuses)
+  const uncategorized = filteredTasks.filter(t => !knownStatuses.has(t.status))
 
   // Calculate sprint metrics
   const totalTasks = filteredTasks.length
-  const wipTasks = tasksByStatus.wip.length
-  const doneTasks = tasksByStatus.done.length
+  const wipStatus = statuses.find(s => s === 'wip') || statuses[2]
+  const doneStatus = statuses.find(s => s === 'done') || statuses[statuses.length - 1]
+  const wipTasks = (tasksByStatus[wipStatus] || []).length
+  const doneTasks = (tasksByStatus[doneStatus] || []).length
   const progress = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
 
   return (
@@ -196,13 +201,23 @@ export default function ScrumbanView({ epics, tasks, onEditTask, settings }) {
           <Column 
             key={status}
             status={status}
-            tasks={tasksByStatus[status]}
+            tasks={tasksByStatus[status] || []}
             epics={epics}
             onTaskClick={onEditTask}
             statusLabel={statusLabels[status] || status}
             priorityLabels={priorityLabels}
           />
         ))}
+        {uncategorized.length > 0 && (
+          <Column
+            status="__other__"
+            tasks={uncategorized}
+            epics={epics}
+            onTaskClick={onEditTask}
+            statusLabel="Прочие"
+            priorityLabels={priorityLabels}
+          />
+        )}
       </div>
     </div>
   )

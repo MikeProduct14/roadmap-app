@@ -128,7 +128,7 @@ export default function App() {
 
   const closeModal = () => setModal(null)
 
-  const handleSave = form => {
+  const handleSave = (form, autoSave = false) => {
     const { mode, ctx } = modal
 
     if (mode === 'epic') {
@@ -155,7 +155,8 @@ export default function App() {
           assignee: form.assignee || 'Не назначен',
           storyPoints: form.storyPoints || 0,
           estimateHours: form.estimateHours || 0,
-          timeLog: form.timeLog || []
+          timeLog: form.timeLog || [],
+          attachments: form.attachments || []
         }],
         nextTaskId: s.nextTaskId + 1
       }))
@@ -173,13 +174,13 @@ export default function App() {
           storyPoints: form.storyPoints || 0,
           estimateHours: form.estimateHours || 0,
           timeLog: form.timeLog || [],
-          // Remove old 'notes' field if exists
+          attachments: form.attachments || [],
           notes: undefined
         } : t) 
       }))
     }
 
-    closeModal()
+    if (!autoSave) closeModal()
   }
 
   const handleDelete = () => {
