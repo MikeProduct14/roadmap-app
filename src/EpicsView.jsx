@@ -138,8 +138,9 @@ function useCollapsed(key) {
 }
 
 export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTask, onEditTask, onAddSub, onReorderEpics, onReorderTasks, settings }) {
-  const statusLabels = settings?.statusLabels || STATUS_LABELS
-  const priorityLabels = settings?.priorityLabels || PRIO_LABELS
+  // Merge defaults with custom labels — custom always wins, but defaults fill gaps
+  const statusLabels = { ...STATUS_LABELS, ...(settings?.statusLabels || {}) }
+  const priorityLabels = { ...PRIO_LABELS, ...(settings?.priorityLabels || {}) }
 
   const [collapsed, toggleCollapsed] = useCollapsed('rm_collapsed_epics')
   const [collapsedTasks, toggleCollapsedTask] = useCollapsed('rm_collapsed_tasks')

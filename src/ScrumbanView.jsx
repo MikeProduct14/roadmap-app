@@ -78,8 +78,8 @@ function Column({ status, tasks, epics, onTaskClick, statusLabel, priorityLabels
 }
 
 export default function ScrumbanView({ epics, tasks, onEditTask, settings }) {
-  const statusLabels = settings?.statusLabels || STATUS_LABELS
-  const priorityLabels = settings?.priorityLabels || PRIO_LABELS
+  const statusLabels = { ...STATUS_LABELS, ...(settings?.statusLabels || {}) }
+  const priorityLabels = { ...PRIO_LABELS, ...(settings?.priorityLabels || {}) }
   const allStatuses = settings?.statuses || Object.keys(STATUS_LABELS)
   const allPriorities = settings?.priorities || Object.keys(PRIO_LABELS)
   const allAssignees = [...new Set(tasks.map(t => t.assignee).filter(a => a && a !== 'Не назначен'))]

@@ -139,7 +139,14 @@ export default function SettingsView({ settings, onSave }) {
     if (form.teamMembers.length === 0) { alert('Добавьте хотя бы одного члена команды'); return }
     if (form.statuses.length === 0) { alert('Добавьте хотя бы один статус'); return }
     if (form.priorities.length === 0) { alert('Добавьте хотя бы один приоритет'); return }
-    onSave(form)
+    
+    // Ensure every status/priority key has a label — fallback to key itself
+    const statusLabels = { ...form.statusLabels }
+    form.statuses.forEach(k => { if (!statusLabels[k]) statusLabels[k] = k })
+    const priorityLabels = { ...form.priorityLabels }
+    form.priorities.forEach(k => { if (!priorityLabels[k]) priorityLabels[k] = k })
+
+    onSave({ ...form, statusLabels, priorityLabels })
     alert('Настройки сохранены!')
   }
 
