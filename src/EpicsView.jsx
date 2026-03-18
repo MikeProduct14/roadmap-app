@@ -138,27 +138,30 @@ function useCollapsed(key) {
 }
 
 export default function EpicsView({ epics, tasks, onAddEpic, onEditEpic, onAddTask, onEditTask, onAddSub, onReorderEpics, onReorderTasks, settings }) {
-  // Merge defaults with custom labels — custom always wins, but defaults fill gaps
-  const statusLabels = { ...STATUS_LABELS, ...(settings?.statusLabels || {}) }
-  const priorityLabels = { ...PRIO_LABELS, ...(settings?.priorityLabels || {}) }
+  // Build complete label maps: defaults → saved custom → fallback to key itself
+  const allStatuses = settings?.statuses || Object.keys(STATUS_LABELS)
+  const allPriorities = settings?.priorities || Object.keys(PRIO_LABELS)
+  const savedStatusLabels = settings?.statusLabels || {}
+  const savedPriorityLabels = settings?.priorityLabels || {}
+  // For every key in statuses/priorities, ensure there's a label (key itself as last resort)
+  const statusLabels = { ...STATUS_LABELS, ...savedStatusLabels }
+  allStatuses.forEach(k => { if (!statusLabels[k]) statusLabels[k] = k })
+  const priorityLabels = { ...PRIO_LABELS, ...savedPriorityLabels }
+  allPriorities.forEach(k => { if (!priorityLabels[k]) priorityLabels[k] = k })
 
-  const [collapsed, toggleCollapsed] = useCollapsed('rm_collapsed_epics')
-  const [collapsedTasks, toggleCollapsedTask] = useCollapsed('rm_collapsed_tasks')
-
+  // State
+  const [sprintFilter, setSprintFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [prioFilter, setPrioFilter] = useState('all')
+  const [assigneeFilter, setAssigneeFilter] = useState('all')
+  const [collapsed, toggleCollapsed] = useCollapsed('rm_epics_collapsed')
+  const [collapsedTasks, toggleCollapsedTask] = useCollapsed('rm_tasks_collapsed')
+  const [hoveringEpic, setHoveringEpic] = useState(null)
   const [draggedEpic, setDraggedEpic] = useState(null)
   const [draggedTask, setDraggedTask] = useState(null)
   const [dragOverTask, setDragOverTask] = useState(null)
-  const [hoveringEpic, setHoveringEpic] = useState(null)
 
-  // Filters
-  const [sprintFilter, setSprintFilter] = useState('all')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [assigneeFilter, setAssigneeFilter] = useState('all')
-  const [prioFilter, setPrioFilter] = useState('all')
-
-  const allStatuses = settings?.statuses || Object.keys(STATUS_LABELS)
-  const allPriorities = settings?.priorities || Object.keys(PRIO_LABELS)
-  const allAssignees = [...new Set(tasks.map(t => t.assignee).filter(Boolean))]
+  const allAssignees = [...new Set(tasks.map(t => t.assignee).filter(a => a && a !== 'Не назначен'))]
 
   // Task filter predicate
   const taskMatches = (t) => {

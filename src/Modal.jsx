@@ -402,10 +402,20 @@ export default function Modal({ mode, ctx, epics, settings, onSave, onDelete, on
               )}
               <div style={s.grid2}>
                 <Field label="Статус">
-                  <Sel value={form.status} onChange={v => set('status', v)} options={(settings?.statuses || Object.keys(STATUS_LABELS)).map(st => [st, ({ ...STATUS_LABELS, ...(settings?.statusLabels || {}) })[st] || st])} />
+                  <Sel value={form.status} onChange={v => set('status', v)} options={(() => {
+                    const sl = { ...STATUS_LABELS, ...(settings?.statusLabels || {}) }
+                    const sts = settings?.statuses || Object.keys(STATUS_LABELS)
+                    sts.forEach(k => { if (!sl[k]) sl[k] = k })
+                    return sts.map(st => [st, sl[st]])
+                  })()} />
                 </Field>
                 <Field label="Приоритет">
-                  <Sel value={form.priority} onChange={v => set('priority', v)} options={(settings?.priorities || Object.keys(PRIO_LABELS)).map(pr => [pr, ({ ...PRIO_LABELS, ...(settings?.priorityLabels || {}) })[pr] || pr])} />
+                  <Sel value={form.priority} onChange={v => set('priority', v)} options={(() => {
+                    const pl = { ...PRIO_LABELS, ...(settings?.priorityLabels || {}) }
+                    const prs = settings?.priorities || Object.keys(PRIO_LABELS)
+                    prs.forEach(k => { if (!pl[k]) pl[k] = k })
+                    return prs.map(pr => [pr, pl[pr]])
+                  })()} />
                 </Field>
                 <Field label="Спринт"><Sel value={form.sprint} onChange={v => set('sprint', v)} options={SPRINTS.map(s => [s, s])} /></Field>
                 <Field label="Усилие">
