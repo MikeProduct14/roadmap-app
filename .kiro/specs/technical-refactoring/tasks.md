@@ -183,26 +183,26 @@
 - [ ] 9. Checkpoint - Проверить обработку ошибок
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 10. Фаза 6: Извлечение констант и утилит
-  - [ ] 10.1 Создать файл констант
+- [-] 10. Фаза 6: Извлечение констант и утилит
+  - [x] 10.1 Создать файл констант
     - Создать src/utils/constants.js
     - Извлечь PRIO_COLORS, PRIO_ORDER, STATUS_BG, STATUS_TX, SEL_STYLE
     - Экспортировать все константы
     - _Requirements: 5.1, 5.6_
   
-  - [ ] 10.2 Обновить импорты констант во всех компонентах
+  - [x] 10.2 Обновить импорты констант во всех компонентах
     - Заменить локальные константы на импорты из utils/constants.js
     - Обновить EpicsView.jsx, ScrumbanView.jsx, GanttView.jsx
     - _Requirements: 5.6_
   
-  - [ ] 10.3 Создать утилиту сортировки задач
+  - [x] 10.3 Создать утилиту сортировки задач
     - Создать src/utils/sortTasks.js
     - Реализовать функцию sortTasks(tasks, sortOption)
     - Поддержать сортировку по: name, priority, deadline, storyPoints (asc/desc)
     - Не мутировать исходный массив
     - _Requirements: 5.2, 5.4, 9.4_
   
-  - [ ] 10.4 Обновить использование sortTasks в компонентах
+  - [x] 10.4 Обновить использование sortTasks в компонентах
     - Заменить inline сортировку на вызов sortTasks
     - Обновить EpicsView.jsx и ScrumbanView.jsx
     - _Requirements: 5.4_

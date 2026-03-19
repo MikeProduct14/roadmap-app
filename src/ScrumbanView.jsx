@@ -1,12 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { STATUS_LABELS, PRIO_LABELS, SPRINTS } from './store.js'
 import MultiSelect from './components/common/MultiSelect'
+import { PRIO_COLORS, STATUS_BG, STATUS_TX, SEL_STYLE } from './utils/constants'
+import { sortTasks } from './utils/sortTasks'
 
-const PRIO_COLORS = { critical: '#E24B4A', high: '#EF9F27', medium: '#378ADD', low: '#888780' }
-const STATUS_BG = { backlog: '#F1EFE8', ready: '#FAEEDA', wip: '#E6F1FB', done: '#EAF3DE', frozen: '#FCEBEB' }
-const STATUS_TX = { backlog: '#5F5E5A', ready: '#854F0B', wip: '#185FA5', done: '#3B6D11', frozen: '#A32D2D' }
-
-const SEL = { fontSize: 12, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--bd2)', background: 'var(--bg2)', color: 'var(--tx2)', cursor: 'pointer' }
+const SEL = SEL_STYLE
 
 const SORT_OPTIONS = [
   { value: 'default', label: 'По умолчанию' },
@@ -19,27 +17,6 @@ const SORT_OPTIONS = [
   { value: 'sp_asc', label: 'SP ↑' },
   { value: 'sp_desc', label: 'SP ↓' },
 ]
-
-const PRIO_ORDER = { critical: 0, high: 1, medium: 2, low: 3 }
-
-function sortTasks(tasks, sort) {
-  if (sort === 'default') return tasks
-  const sorted = [...tasks]
-  sorted.sort((a, b) => {
-    switch (sort) {
-      case 'name_asc': return (a.name || '').localeCompare(b.name || '')
-      case 'name_desc': return (b.name || '').localeCompare(a.name || '')
-      case 'priority_asc': return (PRIO_ORDER[a.priority] ?? 99) - (PRIO_ORDER[b.priority] ?? 99)
-      case 'priority_desc': return (PRIO_ORDER[b.priority] ?? 99) - (PRIO_ORDER[a.priority] ?? 99)
-      case 'deadline_asc': return (a.deadline || '9999') < (b.deadline || '9999') ? -1 : 1
-      case 'deadline_desc': return (a.deadline || '') > (b.deadline || '') ? -1 : 1
-      case 'sp_asc': return (a.storyPoints || 0) - (b.storyPoints || 0)
-      case 'sp_desc': return (b.storyPoints || 0) - (a.storyPoints || 0)
-      default: return 0
-    }
-  })
-  return sorted
-}
 
 const s = {
   container: { padding: '0 0 2rem' },
