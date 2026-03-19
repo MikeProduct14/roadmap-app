@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { STATUS_LABELS, PRIO_LABELS, SPRINTS } from './store.js'
 
 const PRIO_COLORS = { critical: '#E24B4A', high: '#EF9F27', medium: '#378ADD', low: '#888780' }
@@ -6,6 +6,108 @@ const STATUS_BG = { backlog: '#F1EFE8', ready: '#FAEEDA', wip: '#E6F1FB', done: 
 const STATUS_TX = { backlog: '#5F5E5A', ready: '#854F0B', wip: '#185FA5', done: '#3B6D11', frozen: '#A32D2D' }
 
 const SEL = { fontSize: 12, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--bd2)', background: 'var(--bg2)', color: 'var(--tx2)', cursor: 'pointer' }
+
+const SORT_OPTIONS = [
+  { value: 'default', label: 'По умолчанию' },
+  { value: 'name_asc', label: 'Название ↑' },
+  { value: 'name_desc', label: 'Название ↓' },
+  { value: 'priority_asc', label: 'Приоритет ↑' },
+  { value: 'priority_desc', label: 'Приоритет ↓' },
+  { value: 'deadline_asc', label: 'Дедлайн ↑' },
+  { value: 'deadline_desc', label: 'Дедлайн ↓' },
+  { value: 'sp_asc', label: 'SP ↑' },
+  { value: 'sp_desc', label: 'SP ↓' },
+]
+
+const PRIO_ORDER = { critical: 0, high: 1, medium: 2, low: 3 }
+
+function sortTasks(tasks, sort) {
+  if (sort === 'default') return tasks
+  const sorted = [...tasks]
+  sorted.sort((a, b) => {
+    switch (sort) {
+      case 'name_asc': return (a.name || '').localeCompare(b.name || '')
+      case 'name_desc': return (b.name || '').localeCompare(a.name || '')
+      case 'priority_asc': return (PRIO_ORDER[a.priority] ?? 99) - (PRIO_ORDER[b.priority] ?? 99)
+      case 'priority_desc': return (PRIO_ORDER[b.priority] ?? 99) - (PRIO_ORDER[a.priority] ?? 99)
+      case 'deadline_asc': return (a.deadline || '9999') < (b.deadline || '9999') ? -1 : 1
+      case 'deadline_desc': return (a.deadline || '') > (b.deadline || '') ? -1 : 1
+      case 'sp_asc': return (a.storyPoints || 0) - (b.storyPoints || 0)
+      case 'sp_desc': return (b.storyPoints || 0) - (a.storyPoints || 0)
+      default: return 0
+    }
+  })
+  return sorted
+}
+
+// Мультиселект дропдаун с чекбоксами
+function MultiSelect({ label, options, selected, onChange }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const allSelected = selected.length === 0
+  const displayLabel = allSelected ? label : `${label} (${selected.length})`
+
+  function toggle(val) {
+    if (selected.includes(val)) {
+      onChange(selected.filter(v => v !== val))
+    } else {
+      onChange([...selected, val])
+    }
+  }
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          ...SEL,
+          display: 'flex', alignItems: 'center', gap: 4,
+          background: !allSelected ? 'var(--bg3)' : 'var(--bg2)',
+          border: !allSelected ? '1px solid var(--accent, #378ADD)' : '1px solid var(--bd2)',
+          color: !allSelected ? 'var(--accent, #378ADD)' : 'var(--tx2)',
+        }}
+      >
+        {displayLabel}
+        <span style={{ fontSize: 9, marginLeft: 2 }}>{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', top: '100%', left: 0, zIndex: 100, marginTop: 4,
+          background: 'var(--bg2)', border: '1px solid var(--bd2)', borderRadius: 8,
+          boxShadow: '0 4px 16px rgba(0,0,0,0.12)', minWidth: 180, padding: '6px 0',
+        }}>
+          <div
+            style={{ padding: '6px 12px', fontSize: 12, cursor: 'pointer', color: allSelected ? 'var(--accent, #378ADD)' : 'var(--tx3)', fontWeight: allSelected ? 600 : 400 }}
+            onClick={() => onChange([])}
+          >
+            ✓ Все
+          </div>
+          <div style={{ height: 1, background: 'var(--bd)', margin: '4px 0' }} />
+          {options.map(opt => (
+            <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 12, color: 'var(--tx2)' }}>
+              <input
+                type="checkbox"
+                checked={selected.includes(opt.value)}
+                onChange={() => toggle(opt.value)}
+                style={{ cursor: 'pointer', accentColor: 'var(--accent, #378ADD)' }}
+              />
+              {opt.label}
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 const s = {
   container: { padding: '0 0 2rem' },
@@ -23,7 +125,7 @@ const s = {
   emptyColumn: { fontSize: 12, color: 'var(--tx3)', fontStyle: 'italic', textAlign: 'center', padding: '20px 10px' },
 }
 
-function TaskCard({ task, epic, onClick, priorityLabels, statusLabels }) {
+function TaskCard({ task, epic, onClick, priorityLabels }) {
   const [hover, setHover] = useState(false)
   const isOverdue = task.deadline && task.status !== 'done' && new Date(task.deadline) < new Date()
   const prioLabel = (priorityLabels && priorityLabels[task.priority]) || PRIO_LABELS[task.priority] || task.priority
@@ -57,20 +159,21 @@ function TaskCard({ task, epic, onClick, priorityLabels, statusLabels }) {
   )
 }
 
-function Column({ status, tasks, epics, onTaskClick, statusLabel, priorityLabels, statusLabels }) {
+function Column({ status, tasks, epics, onTaskClick, statusLabel, priorityLabels, sort }) {
   const bg = STATUS_BG[status] || '#F1EFE8'
   const tx = STATUS_TX[status] || '#5F5E5A'
+  const sorted = sortTasks(tasks, sort)
   return (
     <div style={s.column}>
       <div style={s.columnHeader}>
         <span style={{ padding: '2px 8px', borderRadius: 99, background: bg, color: tx, fontSize: 12 }}>{statusLabel}</span>
         <span style={s.columnCount}>{tasks.length}</span>
       </div>
-      {tasks.length === 0
+      {sorted.length === 0
         ? <div style={s.emptyColumn}>Нет задач</div>
-        : tasks.map(task => {
+        : sorted.map(task => {
             const epic = epics.find(e => e.id === task.epicId)
-            return <TaskCard key={task.id} task={task} epic={epic} priorityLabels={priorityLabels} statusLabels={statusLabels} onClick={() => onTaskClick(task)} />
+            return <TaskCard key={task.id} task={task} epic={epic} priorityLabels={priorityLabels} onClick={() => onTaskClick(task)} />
           })
       }
     </div>
@@ -87,14 +190,15 @@ export default function ScrumbanView({ epics, tasks, onEditTask, settings }) {
   const allAssignees = [...new Set(tasks.map(t => t.assignee).filter(a => a && a !== 'Не назначен'))]
 
   const [sprintFilter, setSprintFilter] = useState('Sprint 1')
-  const [assigneeFilter, setAssigneeFilter] = useState('all')
-  const [prioFilter, setPrioFilter] = useState('all')
+  const [assigneeFilter, setAssigneeFilter] = useState([])   // массив
+  const [prioFilter, setPrioFilter] = useState([])           // массив
+  const [sort, setSort] = useState('default')
 
   const baseTasks = tasks.filter(t =>
     (sprintFilter === 'all' || t.sprint === sprintFilter) &&
     !t.parentId &&
-    (assigneeFilter === 'all' || t.assignee === assigneeFilter) &&
-    (prioFilter === 'all' || t.priority === prioFilter)
+    (assigneeFilter.length === 0 || assigneeFilter.includes(t.assignee)) &&
+    (prioFilter.length === 0 || prioFilter.includes(t.priority))
   )
 
   const tasksByStatus = allStatuses.reduce((acc, st) => {
@@ -112,7 +216,7 @@ export default function ScrumbanView({ epics, tasks, onEditTask, settings }) {
   const wipTasks = (tasksByStatus[wipStatus] || []).length
   const progress = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
 
-  const activeFilters = assigneeFilter !== 'all' || prioFilter !== 'all'
+  const activeFilters = assigneeFilter.length > 0 || prioFilter.length > 0
 
   return (
     <div style={s.container}>
@@ -125,18 +229,26 @@ export default function ScrumbanView({ epics, tasks, onEditTask, settings }) {
           {SPRINTS.filter(sp => sp !== 'Backlog').map(sp => <option key={sp} value={sp}>{sp}</option>)}
         </select>
 
-        <select value={prioFilter} onChange={e => setPrioFilter(e.target.value)} style={SEL}>
-          <option value="all">Все приоритеты</option>
-          {allPriorities.map(pr => <option key={pr} value={pr}>{priorityLabels[pr] || pr}</option>)}
-        </select>
+        <MultiSelect
+          label="Приоритет"
+          options={allPriorities.map(pr => ({ value: pr, label: priorityLabels[pr] || pr }))}
+          selected={prioFilter}
+          onChange={setPrioFilter}
+        />
 
-        <select value={assigneeFilter} onChange={e => setAssigneeFilter(e.target.value)} style={SEL}>
-          <option value="all">Все ответственные</option>
-          {allAssignees.map(a => <option key={a} value={a}>{a}</option>)}
+        <MultiSelect
+          label="Ответственный"
+          options={allAssignees.map(a => ({ value: a, label: a }))}
+          selected={assigneeFilter}
+          onChange={setAssigneeFilter}
+        />
+
+        <select value={sort} onChange={e => setSort(e.target.value)} style={SEL}>
+          {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
 
         {activeFilters && (
-          <button onClick={() => { setAssigneeFilter('all'); setPrioFilter('all') }}
+          <button onClick={() => { setAssigneeFilter([]); setPrioFilter([]) }}
             style={{ fontSize: 11, padding: '5px 10px', borderRadius: 6, border: '1px solid var(--bd2)', background: 'transparent', color: '#E24B4A', cursor: 'pointer' }}>
             × Сбросить
           </button>
@@ -175,12 +287,13 @@ export default function ScrumbanView({ epics, tasks, onEditTask, settings }) {
             tasks={tasksByStatus[status] || []}
             epics={epics} onTaskClick={onEditTask}
             statusLabel={statusLabels[status] || status}
-            priorityLabels={priorityLabels} statusLabels={statusLabels}
+            priorityLabels={priorityLabels}
+            sort={sort}
           />
         ))}
         {uncategorized.length > 0 && (
           <Column status="__other__" tasks={uncategorized} epics={epics} onTaskClick={onEditTask}
-            statusLabel="Прочие" priorityLabels={priorityLabels} statusLabels={statusLabels} />
+            statusLabel="Прочие" priorityLabels={priorityLabels} sort={sort} />
         )}
       </div>
     </div>
