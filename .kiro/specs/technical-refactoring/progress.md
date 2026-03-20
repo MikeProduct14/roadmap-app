@@ -35,20 +35,24 @@
 
 ## Что осталось сделать 📋
 
-### Фаза 7: Валидация данных (100%)
-- ✅ Создан `src/utils/validation.js` с функцией validateTask
-- ✅ Добавлена валидация перед сохранением в store.js
-- ✅ Добавлена валидация в Modal компонент с подсветкой ошибок
+### Фаза 8: Оптимизация производительности (67%)
+- ✅ Добавлена мемоизация фильтрации задач в ScrumbanView (useMemo)
+- ✅ Добавлена мемоизация сортировки задач в Column компоненте (useMemo)
+- ✅ Добавлена мемоизация фильтрованных эпиков в EpicsView (useMemo)
 - ✅ Все 72 теста проходят
 
 ## Деплой
 - ✅ Commit 1: `refactor(phase-1-3): Setup ESLint/Prettier, extract MultiSelect component`
 - ✅ Commit 2: `refactor(phase-6): Extract constants and sortTasks utility, clean up ScrumbanView`
 - ✅ Commit 3: `refactor(phase-6): Add useCollapsed hook and integrate with EpicsView`
-- ⏳ Commit 4: `refactor(phase-7): Add task validation utility and integrate with Modal`
+- ✅ Commit 4: `refactor(phase-7): Add task validation utility and integrate with Modal`
+- ⏳ Commit 5: `refactor(phase-8): Add useMemo for performance optimization in views`
 - ✅ Задеплоено на: https://mikeproduct14.github.io/roadmap-app/
 
 ## Что осталось сделать 📋
+
+### Фаза 8: Завершить оптимизацию (33%)
+- [ ] 12.3 Разбить большие компоненты на подкомпоненты (опционально)
 
 ### Фаза 4: Реорганизация структуры (0%)
 - [ ] Переместить view компоненты в `src/components/views/`
@@ -151,7 +155,7 @@ npm run format:check
 ## Метрики
 
 - **Всего задач:** 54
-- **Выполнено:** 23 (43%)
-- **Осталось:** 31 (57%)
+- **Выполнено:** 25 (46%)
+- **Осталось:** 29 (54%)
 - **Тесты:** 72/72 проходят ✅
-- **Деплои:** 3 (4-й готов к деплою)
+- **Деплои:** 4 (5-й готов к деплою)

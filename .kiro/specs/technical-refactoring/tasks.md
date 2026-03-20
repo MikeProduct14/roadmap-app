@@ -251,13 +251,13 @@
     - Блокировать кнопку сохранения при невалидных данных
     - _Requirements: 8.4_
 
-- [ ] 12. Фаза 8: Оптимизация производительности
-  - [ ] 12.1 Добавить мемоизацию фильтрации задач
+- [x] 12. Фаза 8: Оптимизация производительности
+  - [x] 12.1 Добавить мемоизацию фильтрации задач
     - Использовать useMemo для filteredTasks в ScrumbanView
     - Зависимости: tasks, statusFilter, prioFilter, assigneeFilter
     - _Requirements: 9.1_
   
-  - [ ] 12.2 Добавить мемоизацию сортировки задач
+  - [x] 12.2 Добавить мемоизацию сортировки задач
     - Использовать useMemo для sortedTasks в EpicsView и ScrumbanView
     - Зависимости: filteredTasks, sortOption
     - _Requirements: 9.2, 9.3_

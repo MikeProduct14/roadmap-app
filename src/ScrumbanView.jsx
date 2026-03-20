@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { STATUS_LABELS, PRIO_LABELS, SPRINTS } from './store.js'
 import MultiSelect from './components/common/MultiSelect'
 import { PRIO_COLORS, STATUS_BG, STATUS_TX, SEL_STYLE } from './utils/constants'
@@ -71,7 +71,10 @@ function TaskCard({ task, epic, onClick, priorityLabels }) {
 function Column({ status, tasks, epics, onTaskClick, statusLabel, priorityLabels, sort }) {
   const bg = STATUS_BG[status] || '#F1EFE8'
   const tx = STATUS_TX[status] || '#5F5E5A'
-  const sorted = sortTasks(tasks, sort)
+  
+  // Memoize sorted tasks to avoid unnecessary recalculations
+  const sorted = useMemo(() => sortTasks(tasks, sort), [tasks, sort])
+  
   return (
     <div style={s.column}>
       <div style={s.columnHeader}>
@@ -103,17 +106,23 @@ export default function ScrumbanView({ epics, tasks, onEditTask, settings }) {
   const [prioFilter, setPrioFilter] = useState([])           // массив
   const [sort, setSort] = useState('default')
 
-  const baseTasks = tasks.filter(t =>
-    (sprintFilter === 'all' || t.sprint === sprintFilter) &&
-    !t.parentId &&
-    (assigneeFilter.length === 0 || assigneeFilter.includes(t.assignee)) &&
-    (prioFilter.length === 0 || prioFilter.includes(t.priority))
-  )
+  // Memoize filtered tasks to avoid unnecessary recalculations
+  const baseTasks = useMemo(() => {
+    return tasks.filter(t =>
+      (sprintFilter === 'all' || t.sprint === sprintFilter) &&
+      !t.parentId &&
+      (assigneeFilter.length === 0 || assigneeFilter.includes(t.assignee)) &&
+      (prioFilter.length === 0 || prioFilter.includes(t.priority))
+    )
+  }, [tasks, sprintFilter, assigneeFilter, prioFilter])
 
-  const tasksByStatus = allStatuses.reduce((acc, st) => {
-    acc[st] = baseTasks.filter(t => t.status === st)
-    return acc
-  }, {})
+  // Memoize tasks grouped by status
+  const tasksByStatus = useMemo(() => {
+    return allStatuses.reduce((acc, st) => {
+      acc[st] = baseTasks.filter(t => t.status === st)
+      return acc
+    }, {})
+  }, [baseTasks, allStatuses])
 
   const knownSet = new Set(allStatuses)
   const uncategorized = baseTasks.filter(t => !knownSet.has(t.status))
