@@ -183,7 +183,7 @@
 - [ ] 9. Checkpoint - Проверить обработку ошибок
   - Ensure all tests pass, ask the user if questions arise.
 
-- [-] 10. Фаза 6: Извлечение констант и утилит
+- [x] 10. Фаза 6: Извлечение констант и утилит
   - [x] 10.1 Создать файл констант
     - Создать src/utils/constants.js
     - Извлечь PRIO_COLORS, PRIO_ORDER, STATUS_BG, STATUS_TX, SEL_STYLE
@@ -207,14 +207,14 @@
     - Обновить EpicsView.jsx и ScrumbanView.jsx
     - _Requirements: 5.4_
   
-  - [ ] 10.5 Создать хук useCollapsed
+  - [x] 10.5 Создать хук useCollapsed
     - Создать src/hooks/useCollapsed.js
     - Реализовать хук для управления collapsed состоянием
     - Сохранять состояние в localStorage
     - Восстанавливать состояние при монтировании
     - _Requirements: 5.3, 5.5_
   
-  - [ ] 10.6 Использовать useCollapsed в EpicsView
+  - [x] 10.6 Использовать useCollapsed в EpicsView
     - Заменить локальное состояние на useCollapsed
     - Передать storageKey для персистентности
     - _Requirements: 5.5, 7.8_

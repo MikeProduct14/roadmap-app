@@ -19,25 +19,28 @@
 - ✅ Извлечен компонент `MultiSelect` в `src/components/common/MultiSelect.jsx`
 - ✅ Обновлен `ScrumbanView.jsx` для использования извлеченного компонента
 
-### Фаза 6: Извлечение констант и утилит (60%)
+### Фаза 6: Извлечение констант и утилит (100%)
 - ✅ Создан `src/utils/constants.js` с константами: PRIO_COLORS, PRIO_ORDER, STATUS_BG, STATUS_TX, SEL_STYLE
 - ✅ Создан `src/utils/sortTasks.js` с функцией сортировки задач
 - ✅ Обновлен `ScrumbanView.jsx` - удалены дубликаты, используются импорты из utils
+- ✅ Создан хук `useCollapsed` в `src/hooks/useCollapsed.js`
+- ✅ Обновлен `EpicsView.jsx` - использует хук useCollapsed для персистентности состояния
 - ✅ Все 72 теста проходят
 
 ## Деплой
 - ✅ Commit 1: `refactor(phase-1-3): Setup ESLint/Prettier, extract MultiSelect component`
 - ✅ Commit 2: `refactor(phase-6): Extract constants and sortTasks utility, clean up ScrumbanView`
+- ⏳ Commit 3: `refactor(phase-6): Add useCollapsed hook and integrate with EpicsView`
 - ✅ Задеплоено на: https://mikeproduct14.github.io/roadmap-app/
 
 ## Что осталось сделать 📋
 
-### Фаза 6: Завершить извлечение утилит (40%)
-- [ ] 10.5 Создать хук `useCollapsed` в `src/hooks/useCollapsed.js`
-  - Управление collapsed состоянием
-  - Сохранение в localStorage
-  - Восстановление при монтировании
-- [ ] 10.6 Использовать `useCollapsed` в EpicsView
+### Фаза 7: Валидация данных (0%)
+- [ ] 11.1 Создать `src/utils/validation.js`
+  - Реализовать функцию validateTask(task)
+  - Проверять наличие name, epicId, status
+- [ ] 11.2 Добавить валидацию перед сохранением задачи
+- [ ] 11.3 Добавить валидацию в Modal компонент
 - [ ] 10.7 Написать unit тесты для sortTasks (опционально)
 - [ ] 10.8 Написать unit тесты для useCollapsed (опционально)
 
@@ -142,7 +145,7 @@ npm run format:check
 ## Метрики
 
 - **Всего задач:** 54
-- **Выполнено:** 18 (33%)
-- **Осталось:** 36 (67%)
+- **Выполнено:** 20 (37%)
+- **Осталось:** 34 (63%)
 - **Тесты:** 72/72 проходят ✅
-- **Деплои:** 2
+- **Деплои:** 2 (3-й готов к деплою)
