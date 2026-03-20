@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from './supabase.js'
+import { validateTask, showValidationErrors } from './utils/validation.js'
 
 // Initial seed data
 const SEED_EPICS = [
@@ -204,3 +205,13 @@ export const SPRINT_MESSAGES = {
 
 export const GANTT_BASE = new Date('2026-03-10')
 export const GANTT_WEEKS = 16
+
+// Validate task before saving
+export function validateTaskBeforeSave(task) {
+  const validation = validateTask(task)
+  if (!validation.isValid) {
+    showValidationErrors(validation.errors)
+    return false
+  }
+  return true
+}

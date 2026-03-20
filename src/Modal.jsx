@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { SPRINTS, EPIC_COLORS, STATUS_LABELS, PRIO_LABELS, EFFORT_LABELS, ART_TYPES } from './store.js'
+import { validateTask, showValidationErrors } from './utils/validation.js'
 
 const ALLOWED_FILE_TYPES = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/markdown', 'text/plain']
 const ALLOWED_EXT = ['.pdf', '.docx', '.md', '.xls', '.xlsx']
@@ -12,6 +13,7 @@ const s = {
   autoSaveHint: { fontSize: 11, color: 'var(--tx3)', marginBottom: 16 },
   label: { display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 6, fontWeight: 500 },
   input: { width: '100%', fontSize: 14, padding: '9px 12px', borderRadius: 7, border: '1px solid var(--bd2)', background: 'var(--bg2)', color: 'var(--tx)' },
+  inputError: { width: '100%', fontSize: 14, padding: '9px 12px', borderRadius: 7, border: '1px solid #E24B4A', background: 'var(--bg2)', color: 'var(--tx)' },
   row: { marginBottom: 14 },
   grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 },
   footer: { display: 'flex', justifyContent: 'flex-end', gap: 10, padding: '12px 26px', background: 'var(--bg)', borderTop: '1px solid var(--bd)', flexShrink: 0, borderRadius: '0 0 var(--radius) var(--radius)' },
@@ -312,6 +314,7 @@ export default function Modal({ mode, ctx, epics, settings, onSave, onDelete, on
   }, []) // eslint-disable-line
 
   const [form, setForm] = useState(initForm)
+  const [validationErrors, setValidationErrors] = useState([])
 
   // Auto-save on blur: debounce 800ms after last change
   const triggerAutoSave = useCallback((currentForm) => {
@@ -335,6 +338,10 @@ export default function Modal({ mode, ctx, epics, settings, onSave, onDelete, on
   const set = (k, v) => {
     setForm(f => {
       const next = { ...f, [k]: v }
+      // Clear validation errors when user starts typing
+      if (validationErrors.length > 0) {
+        setValidationErrors([])
+      }
       triggerAutoSave(next)
       return next
     })
@@ -342,6 +349,17 @@ export default function Modal({ mode, ctx, epics, settings, onSave, onDelete, on
 
   const handleSave = () => {
     if (!form.name.trim()) { alert('Название не может быть пустым'); return }
+    
+    // Validate task before saving (skip validation for epics)
+    if (!isEpic) {
+      const validation = validateTask(form)
+      if (!validation.isValid) {
+        setValidationErrors(validation.errors)
+        showValidationErrors(validation.errors)
+        return
+      }
+    }
+    
     clearTimeout(autoSaveTimer.current)
     onSave(form)
   }
@@ -369,7 +387,7 @@ export default function Modal({ mode, ctx, epics, settings, onSave, onDelete, on
               value={form.name}
               onChange={e => set('name', e.target.value)}
               placeholder="Название..."
-              style={s.input}
+              style={validationErrors.some(e => e.includes('Название')) ? s.inputError : s.input}
               autoFocus
             />
           </Field>

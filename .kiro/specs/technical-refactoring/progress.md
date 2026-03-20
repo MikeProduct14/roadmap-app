@@ -35,14 +35,20 @@
 
 ## Что осталось сделать 📋
 
-### Фаза 7: Валидация данных (0%)
-- [ ] 11.1 Создать `src/utils/validation.js`
-  - Реализовать функцию validateTask(task)
-  - Проверять наличие name, epicId, status
-- [ ] 11.2 Добавить валидацию перед сохранением задачи
-- [ ] 11.3 Добавить валидацию в Modal компонент
-- [ ] 10.7 Написать unit тесты для sortTasks (опционально)
-- [ ] 10.8 Написать unit тесты для useCollapsed (опционально)
+### Фаза 7: Валидация данных (100%)
+- ✅ Создан `src/utils/validation.js` с функцией validateTask
+- ✅ Добавлена валидация перед сохранением в store.js
+- ✅ Добавлена валидация в Modal компонент с подсветкой ошибок
+- ✅ Все 72 теста проходят
+
+## Деплой
+- ✅ Commit 1: `refactor(phase-1-3): Setup ESLint/Prettier, extract MultiSelect component`
+- ✅ Commit 2: `refactor(phase-6): Extract constants and sortTasks utility, clean up ScrumbanView`
+- ✅ Commit 3: `refactor(phase-6): Add useCollapsed hook and integrate with EpicsView`
+- ⏳ Commit 4: `refactor(phase-7): Add task validation utility and integrate with Modal`
+- ✅ Задеплоено на: https://mikeproduct14.github.io/roadmap-app/
+
+## Что осталось сделать 📋
 
 ### Фаза 4: Реорганизация структуры (0%)
 - [ ] Переместить view компоненты в `src/components/views/`
@@ -145,7 +151,7 @@ npm run format:check
 ## Метрики
 
 - **Всего задач:** 54
-- **Выполнено:** 20 (37%)
-- **Осталось:** 34 (63%)
+- **Выполнено:** 23 (43%)
+- **Осталось:** 31 (57%)
 - **Тесты:** 72/72 проходят ✅
-- **Деплои:** 2 (3-й готов к деплою)
+- **Деплои:** 3 (4-й готов к деплою)
