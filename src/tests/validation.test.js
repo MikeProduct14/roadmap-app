@@ -12,19 +12,23 @@ function validatePhone(phone) {
 }
 
 const COUNTRY_CODES = [
-  { code: '+7',   minLen: 10, maxLen: 10, startsWith: ['9', '8', '7', '4', '3'] },
-  { code: '+380', minLen: 9,  maxLen: 9,  startsWith: ['5', '6', '7', '9'] },
-  { code: '+375', minLen: 9,  maxLen: 9,  startsWith: ['2', '3', '4'] },
-  { code: '+998', minLen: 9,  maxLen: 9,  startsWith: ['9', '7', '6'] },
-  { code: '+1',   minLen: 10, maxLen: 10, startsWith: null },
-  { code: '+44',  minLen: 10, maxLen: 10, startsWith: null },
-  { code: '+86',  minLen: 11, maxLen: 11, startsWith: ['1'] },
+  { code: '+7', minLen: 10, maxLen: 10, startsWith: ['9', '8', '7', '4', '3'] },
+  { code: '+380', minLen: 9, maxLen: 9, startsWith: ['5', '6', '7', '9'] },
+  { code: '+375', minLen: 9, maxLen: 9, startsWith: ['2', '3', '4'] },
+  { code: '+998', minLen: 9, maxLen: 9, startsWith: ['9', '7', '6'] },
+  { code: '+1', minLen: 10, maxLen: 10, startsWith: null },
+  { code: '+44', minLen: 10, maxLen: 10, startsWith: null },
+  { code: '+86', minLen: 11, maxLen: 11, startsWith: ['1'] },
 ]
 
 function validatePhoneByCountry(countryCode, localNumber) {
   const country = COUNTRY_CODES.find(c => c.code === countryCode)
   if (!country) return { valid: false, error: 'Неизвестный код страны' }
-  if (country.startsWith && localNumber.length > 0 && !country.startsWith.includes(localNumber[0])) {
+  if (
+    country.startsWith &&
+    localNumber.length > 0 &&
+    !country.startsWith.includes(localNumber[0])
+  ) {
     return { valid: false, error: `Номер должен начинаться с: ${country.startsWith.join(', ')}` }
   }
   if (localNumber.length < country.minLen) {

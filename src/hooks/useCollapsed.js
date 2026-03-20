@@ -11,7 +11,7 @@ export function useCollapsed(storageKey) {
     }
   })
 
-  const toggle = (id) => {
+  const toggle = id => {
     setState(current => {
       const next = { ...current, [id]: !current[id] }
       try {

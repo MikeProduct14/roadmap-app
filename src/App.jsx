@@ -1,5 +1,11 @@
-import React, { useState, useCallback, useEffect } from 'react'
-import { loadState, saveState, saveStateWithoutTimestamp, loadStateFromSupabase, saveStateToSupabase } from './store.js'
+import { useState, useCallback, useEffect } from 'react'
+import {
+  loadState,
+  saveState,
+  saveStateWithoutTimestamp,
+  loadStateFromSupabase,
+  saveStateToSupabase,
+} from './store.js'
 import { isSupabaseConfigured, supabase } from './supabase.js'
 import Auth, { LoginScreen } from './Auth.jsx'
 import Modal from './Modal.jsx'
@@ -49,21 +55,26 @@ function useStore(user) {
     }
   }, [user])
 
-  const update = useCallback(updater => {
-    setState(prev => {
-      const next = updater(prev)
-      saveState(next)
-      console.log('[store] saveState called, tasks:', next.tasks?.length)
-      if (user && isSupabaseConfigured()) {
-        saveStateToSupabase(user.id, next).then(() => {
-          console.log('[store] saved to Supabase OK, tasks:', next.tasks?.length)
-        }).catch(err => {
-          console.error('[store] Supabase save error:', err)
-        })
-      }
-      return next
-    })
-  }, [user])
+  const update = useCallback(
+    updater => {
+      setState(prev => {
+        const next = updater(prev)
+        saveState(next)
+        console.log('[store] saveState called, tasks:', next.tasks?.length)
+        if (user && isSupabaseConfigured()) {
+          saveStateToSupabase(user.id, next)
+            .then(() => {
+              console.log('[store] saved to Supabase OK, tasks:', next.tasks?.length)
+            })
+            .catch(err => {
+              console.error('[store] Supabase save error:', err)
+            })
+        }
+        return next
+      })
+    },
+    [user]
+  )
 
   return { state, update, loading }
 }
@@ -72,7 +83,7 @@ export default function App() {
   const [user, setUser] = useState(null)
   const [authReady, setAuthReady] = useState(false)
   const { state, update, loading } = useStore(user)
-  const { epics, tasks, nextEpicId, nextTaskId, settings } = state
+  const { epics, tasks, settings } = state
 
   const [tab, setTab] = useState('epics')
   const [modal, setModal] = useState(null)
@@ -89,7 +100,9 @@ export default function App() {
       setAuthReady(true)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (_event === 'SIGNED_IN' || _event === 'SIGNED_OUT' || _event === 'USER_UPDATED') {
         setUser(session?.user ?? null)
       }
@@ -101,7 +114,15 @@ export default function App() {
   // Пока не знаем статус сессии — ничего не рендерим
   if (!authReady) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'var(--tx2)' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh',
+          color: 'var(--tx2)',
+        }}
+      >
         Загрузка...
       </div>
     )
@@ -114,13 +135,15 @@ export default function App() {
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        height: '100vh',
-        color: 'var(--tx2)'
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh',
+          color: 'var(--tx2)',
+        }}
+      >
         Загрузка...
       </div>
     )
@@ -132,9 +155,13 @@ export default function App() {
     const { mode, ctx } = modal
 
     if (mode === 'epic') {
-      update(s => ({ ...s, epics: [...s.epics, { id: `e${s.nextEpicId}`, ...form }], nextEpicId: s.nextEpicId + 1 }))
+      update(s => ({
+        ...s,
+        epics: [...s.epics, { id: `e${s.nextEpicId}`, ...form }],
+        nextEpicId: s.nextEpicId + 1,
+      }))
     } else if (mode === 'epic-edit') {
-      update(s => ({ ...s, epics: s.epics.map(e => e.id === ctx.id ? { ...e, ...form } : e) }))
+      update(s => ({ ...s, epics: s.epics.map(e => (e.id === ctx.id ? { ...e, ...form } : e)) }))
     } else if (mode === 'task') {
       // Validate epicId exists
       if (!form.epicId || !epics.find(e => e.id === form.epicId)) {
@@ -145,38 +172,45 @@ export default function App() {
       const cleanedArtifacts = (form.artifacts || []).filter(a => a.name.trim())
       update(s => ({
         ...s,
-        tasks: [...s.tasks, { 
-          id: `t${s.nextTaskId}`, 
-          epicId: ctx.epicId, 
-          parentId: ctx.parentId || null, 
-          ...form,
-          artifacts: cleanedArtifacts,
-          comments: form.comments || [],
-          assignee: form.assignee || 'Не назначен',
-          storyPoints: form.storyPoints || 0,
-          estimateHours: form.estimateHours || 0,
-          timeLog: form.timeLog || [],
-          attachments: form.attachments || []
-        }],
-        nextTaskId: s.nextTaskId + 1
+        tasks: [
+          ...s.tasks,
+          {
+            id: `t${s.nextTaskId}`,
+            epicId: ctx.epicId,
+            parentId: ctx.parentId || null,
+            ...form,
+            artifacts: cleanedArtifacts,
+            comments: form.comments || [],
+            assignee: form.assignee || 'Не назначен',
+            storyPoints: form.storyPoints || 0,
+            estimateHours: form.estimateHours || 0,
+            timeLog: form.timeLog || [],
+            attachments: form.attachments || [],
+          },
+        ],
+        nextTaskId: s.nextTaskId + 1,
       }))
     } else if (mode === 'task-edit') {
       // Filter out empty artifacts
       const cleanedArtifacts = (form.artifacts || []).filter(a => a.name.trim())
-      update(s => ({ 
-        ...s, 
-        tasks: s.tasks.map(t => t.id === ctx.id ? { 
-          ...t, 
-          ...form,
-          artifacts: cleanedArtifacts,
-          comments: form.comments || [],
-          assignee: form.assignee || 'Не назначен',
-          storyPoints: form.storyPoints || 0,
-          estimateHours: form.estimateHours || 0,
-          timeLog: form.timeLog || [],
-          attachments: form.attachments || [],
-          notes: undefined
-        } : t) 
+      update(s => ({
+        ...s,
+        tasks: s.tasks.map(t =>
+          t.id === ctx.id
+            ? {
+                ...t,
+                ...form,
+                artifacts: cleanedArtifacts,
+                comments: form.comments || [],
+                assignee: form.assignee || 'Не назначен',
+                storyPoints: form.storyPoints || 0,
+                estimateHours: form.estimateHours || 0,
+                timeLog: form.timeLog || [],
+                attachments: form.attachments || [],
+                notes: undefined,
+              }
+            : t
+        ),
       }))
     }
 
@@ -185,31 +219,31 @@ export default function App() {
 
   const handleDelete = () => {
     const { mode, ctx } = modal
-    
+
     if (!confirm('Вы уверены? Это действие нельзя отменить.')) {
       return
     }
-    
+
     if (mode === 'epic-edit') {
       update(s => ({
         ...s,
         epics: s.epics.filter(e => e.id !== ctx.id),
-        tasks: s.tasks.filter(t => t.epicId !== ctx.id)
+        tasks: s.tasks.filter(t => t.epicId !== ctx.id),
       }))
     } else if (mode === 'task-edit') {
       // Recursively collect all child task IDs
-      const collectChildIds = (taskId) => {
+      const collectChildIds = taskId => {
         const children = tasks.filter(t => t.parentId === taskId)
         const childIds = children.map(c => c.id)
         const grandChildIds = children.flatMap(c => collectChildIds(c.id))
         return [...childIds, ...grandChildIds]
       }
-      
+
       const idsToDelete = [ctx.id, ...collectChildIds(ctx.id)]
-      
-      update(s => ({ 
-        ...s, 
-        tasks: s.tasks.filter(t => !idsToDelete.includes(t.id)) 
+
+      update(s => ({
+        ...s,
+        tasks: s.tasks.filter(t => !idsToDelete.includes(t.id)),
       }))
     }
     closeModal()
@@ -228,34 +262,52 @@ export default function App() {
     update(s => {
       const epicTasks = s.tasks.filter(t => t.epicId === epicId && t.parentId === parentId)
       const otherTasks = s.tasks.filter(t => t.epicId !== epicId || t.parentId !== parentId)
-      
+
       const [moved] = epicTasks.splice(fromIndex, 1)
       epicTasks.splice(toIndex, 0, moved)
-      
+
       return { ...s, tasks: [...otherTasks, ...epicTasks] }
     })
   }
 
-  const handleSaveSettings = (newSettings) => {
+  const handleSaveSettings = newSettings => {
     update(s => ({ ...s, settings: newSettings }))
   }
 
-  const handleSaveSprintHistory = (historyEntry) => {
+  const handleSaveSprintHistory = historyEntry => {
     update(s => ({
       ...s,
       settings: {
         ...s.settings,
-        sprintHistory: [...(s.settings.sprintHistory || []), historyEntry]
-      }
+        sprintHistory: [...(s.settings.sprintHistory || []), historyEntry],
+      },
     }))
   }
 
   return (
-    <div style={{ maxWidth: 1400, margin: '0 auto', padding: '1.5rem 1rem', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div
+      style={{
+        maxWidth: 1400,
+        margin: '0 auto',
+        padding: '1.5rem 1rem',
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '1.5rem',
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 600, color: 'var(--tx)' }}>{settings?.projectName || 'Roadmap'}</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 600, color: 'var(--tx)' }}>
+            {settings?.projectName || 'Roadmap'}
+          </h1>
           <span style={{ fontSize: 12, color: 'var(--tx3)' }}>
             {epics.length} эпиков · {tasks.length} задач
           </span>
@@ -264,19 +316,33 @@ export default function App() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: '1.5rem', borderBottom: '0.5px solid var(--bd)' }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: 4,
+          marginBottom: '1.5rem',
+          borderBottom: '0.5px solid var(--bd)',
+        }}
+      >
         {TABS.map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             style={{
-              padding: '7px 16px', fontSize: 13, border: 'none', background: 'none',
+              padding: '7px 16px',
+              fontSize: 13,
+              border: 'none',
+              background: 'none',
               color: tab === t.id ? 'var(--tx)' : 'var(--tx2)',
               fontWeight: tab === t.id ? 600 : 400,
               borderBottom: tab === t.id ? '2px solid var(--tx)' : '2px solid transparent',
-              marginBottom: -1, cursor: 'pointer', fontFamily: 'inherit'
+              marginBottom: -1,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
             }}
-          >{t.label}</button>
+          >
+            {t.label}
+          </button>
         ))}
       </div>
 
@@ -288,65 +354,65 @@ export default function App() {
           settings={settings}
           onAddEpic={() => setModal({ mode: 'epic', ctx: null })}
           onEditEpic={ep => setModal({ mode: 'epic-edit', ctx: ep })}
-          onAddTask={ep => setModal({ mode: 'task', ctx: { epicId: ep?.id || epics[0]?.id, parentId: null, sprint: ep?.sprint || 'Sprint 1' } })}
+          onAddTask={ep =>
+            setModal({
+              mode: 'task',
+              ctx: {
+                epicId: ep?.id || epics[0]?.id,
+                parentId: null,
+                sprint: ep?.sprint || 'Sprint 1',
+              },
+            })
+          }
           onEditTask={t => setModal({ mode: 'task-edit', ctx: t })}
-          onAddSub={t => setModal({ mode: 'task', ctx: { epicId: t.epicId, parentId: t.id, sprint: t.sprint } })}
+          onAddSub={t =>
+            setModal({ mode: 'task', ctx: { epicId: t.epicId, parentId: t.id, sprint: t.sprint } })
+          }
           onReorderEpics={handleReorderEpics}
           onReorderTasks={handleReorderTasks}
         />
       )}
-      {tab === 'gantt' && (
-        <GanttView epics={epics} tasks={tasks} />
-      )}
+      {tab === 'gantt' && <GanttView epics={epics} tasks={tasks} />}
       {tab === 'scrumban' && (
-        <ScrumbanView 
-          epics={epics} 
+        <ScrumbanView
+          epics={epics}
           tasks={tasks}
           settings={settings}
           onEditTask={t => setModal({ mode: 'task-edit', ctx: t })}
         />
       )}
       {tab === 'sprint' && (
-        <SprintReview 
-          tasks={tasks} 
-          settings={settings}
-          onSaveHistory={handleSaveSprintHistory}
-        />
+        <SprintReview tasks={tasks} settings={settings} onSaveHistory={handleSaveSprintHistory} />
       )}
-      {tab === 'settings' && (
-        <SettingsView 
-          settings={settings}
-          onSave={handleSaveSettings}
-        />
-      )}
-      {tab === 'retro' && (
-        <RetroView />
-      )}
+      {tab === 'settings' && <SettingsView settings={settings} onSave={handleSaveSettings} />}
+      {tab === 'retro' && <RetroView />}
 
       {/* Footer */}
-      <div style={{ 
-        marginTop: 'auto', 
-        paddingTop: '3rem', 
-        paddingBottom: '1rem', 
-        textAlign: 'center', 
-        fontSize: 11, 
-        color: 'var(--tx3)',
-        borderTop: '0.5px solid var(--bd)',
-        marginLeft: '-1rem',
-        marginRight: '-1rem',
-        paddingLeft: '1rem',
-        paddingRight: '1rem'
-      }}>
+      <div
+        style={{
+          marginTop: 'auto',
+          paddingTop: '3rem',
+          paddingBottom: '1rem',
+          textAlign: 'center',
+          fontSize: 11,
+          color: 'var(--tx3)',
+          borderTop: '0.5px solid var(--bd)',
+          marginLeft: '-1rem',
+          marginRight: '-1rem',
+          paddingLeft: '1rem',
+          paddingRight: '1rem',
+        }}
+      >
         Developed by{' '}
-        <a 
-          href="https://vibecodify.ru" 
-          target="_blank" 
+        <a
+          href="https://vibecodify.ru"
+          target="_blank"
           rel="noopener noreferrer"
           style={{ color: 'var(--tx2)', textDecoration: 'none', fontWeight: 500 }}
         >
           vibecodify.ru
-        </a>
-        {' '}studio, founded by Mikhail Yeroshikin
+        </a>{' '}
+        studio, founded by Mikhail Yeroshikin
       </div>
 
       {/* Modal */}

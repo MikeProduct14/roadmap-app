@@ -1,21 +1,81 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { STATUS_LABELS, PRIO_LABELS, EFFORT_LABELS } from './store.js'
 
 const s = {
   container: { padding: '0 0 2rem' },
-  section: { marginBottom: '2rem', border: '1px solid var(--bd)', borderRadius: 10, padding: '20px 24px', background: 'var(--bg)' },
+  section: {
+    marginBottom: '2rem',
+    border: '1px solid var(--bd)',
+    borderRadius: 10,
+    padding: '20px 24px',
+    background: 'var(--bg)',
+  },
   h: { fontSize: 16, fontWeight: 600, color: 'var(--tx)', marginBottom: 16 },
   label: { display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 6, fontWeight: 500 },
-  input: { width: '100%', fontSize: 14, padding: '9px 12px', borderRadius: 7, border: '1px solid var(--bd2)', background: 'var(--bg2)', color: 'var(--tx)' },
+  input: {
+    width: '100%',
+    fontSize: 14,
+    padding: '9px 12px',
+    borderRadius: 7,
+    border: '1px solid var(--bd2)',
+    background: 'var(--bg2)',
+    color: 'var(--tx)',
+  },
   row: { marginBottom: 14 },
-  listItem: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, padding: '8px 12px', background: 'var(--bg2)', borderRadius: 7, border: '1px solid var(--bd)' },
-  removeBtn: { background: 'none', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 18, padding: '4px 8px', minWidth: 32, minHeight: 32 },
-  addBtn: { fontSize: 13, padding: '7px 14px', borderRadius: 7, border: '1px solid var(--bd2)', background: 'var(--bg2)', color: 'var(--tx)', cursor: 'pointer', fontWeight: 500, marginTop: 8 },
-  saveBtn: { fontSize: 13, padding: '8px 16px', borderRadius: 7, border: 'none', background: 'var(--tx)', color: 'var(--bg)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 },
+  listItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+    padding: '8px 12px',
+    background: 'var(--bg2)',
+    borderRadius: 7,
+    border: '1px solid var(--bd)',
+  },
+  removeBtn: {
+    background: 'none',
+    border: 'none',
+    color: 'var(--tx3)',
+    cursor: 'pointer',
+    fontSize: 18,
+    padding: '4px 8px',
+    minWidth: 32,
+    minHeight: 32,
+  },
+  addBtn: {
+    fontSize: 13,
+    padding: '7px 14px',
+    borderRadius: 7,
+    border: '1px solid var(--bd2)',
+    background: 'var(--bg2)',
+    color: 'var(--tx)',
+    cursor: 'pointer',
+    fontWeight: 500,
+    marginTop: 8,
+  },
+  saveBtn: {
+    fontSize: 13,
+    padding: '8px 16px',
+    borderRadius: 7,
+    border: 'none',
+    background: 'var(--tx)',
+    color: 'var(--bg)',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    fontWeight: 600,
+  },
   toggle: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 },
   checkbox: { width: 18, height: 18, cursor: 'pointer' },
   hint: { fontSize: 11, color: 'var(--tx3)', marginTop: 4 },
-  keyBadge: { fontSize: 10, padding: '2px 6px', borderRadius: 4, background: 'var(--bg3)', color: 'var(--tx3)', fontFamily: 'monospace', flexShrink: 0 },
+  keyBadge: {
+    fontSize: 10,
+    padding: '2px 6px',
+    borderRadius: 4,
+    background: 'var(--bg3)',
+    color: 'var(--tx3)',
+    fontFamily: 'monospace',
+    flexShrink: 0,
+  },
 }
 
 // Редактируемый список с парами ключ → отображаемое название
@@ -26,18 +86,27 @@ function LabeledList({ label, hint, items, labels, onChange, keyPlaceholder, lab
   const add = () => {
     const key = newKey.trim().toLowerCase().replace(/\s+/g, '_')
     const lbl = newLabel.trim()
-    if (!key || !lbl) { alert('Заполните оба поля: ключ и название'); return }
-    if (items.includes(key)) { alert('Такой ключ уже существует'); return }
+    if (!key || !lbl) {
+      alert('Заполните оба поля: ключ и название')
+      return
+    }
+    if (items.includes(key)) {
+      alert('Такой ключ уже существует')
+      return
+    }
     onChange([...items, key], { ...labels, [key]: lbl })
     setNewKey('')
     setNewLabel('')
   }
 
-  const remove = (key) => {
+  const remove = key => {
     if (!confirm(`Удалить "${labels[key] || key}"?`)) return
     const newLabels = { ...labels }
     delete newLabels[key]
-    onChange(items.filter(i => i !== key), newLabels)
+    onChange(
+      items.filter(i => i !== key),
+      newLabels
+    )
   }
 
   const updateLabel = (key, val) => {
@@ -56,7 +125,9 @@ function LabeledList({ label, hint, items, labels, onChange, keyPlaceholder, lab
             onChange={e => updateLabel(key, e.target.value)}
             style={{ ...s.input, flex: 1, padding: '6px 10px', fontSize: 13 }}
           />
-          <button style={s.removeBtn} onClick={() => remove(key)} title="Удалить">×</button>
+          <button style={s.removeBtn} onClick={() => remove(key)} title="Удалить">
+            ×
+          </button>
         </div>
       ))}
       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
@@ -74,7 +145,9 @@ function LabeledList({ label, hint, items, labels, onChange, keyPlaceholder, lab
           placeholder={labelPlaceholder || 'Название'}
           style={{ ...s.input, flex: 1 }}
         />
-        <button style={s.addBtn} onClick={add}>Добавить</button>
+        <button style={s.addBtn} onClick={add}>
+          Добавить
+        </button>
       </div>
     </div>
   )
@@ -87,12 +160,15 @@ function SimpleList({ label, items, onChange, placeholder }) {
   const add = () => {
     const trimmed = newItem.trim()
     if (!trimmed) return
-    if (items.includes(trimmed)) { alert('Уже существует'); return }
+    if (items.includes(trimmed)) {
+      alert('Уже существует')
+      return
+    }
     onChange([...items, trimmed])
     setNewItem('')
   }
 
-  const remove = (item) => {
+  const remove = item => {
     if (!confirm(`Удалить "${item}"?`)) return
     onChange(items.filter(i => i !== item))
   }
@@ -103,7 +179,9 @@ function SimpleList({ label, items, onChange, placeholder }) {
       {items.map(item => (
         <div key={item} style={s.listItem}>
           <span style={{ flex: 1, fontSize: 13, color: 'var(--tx)' }}>{item}</span>
-          <button style={s.removeBtn} onClick={() => remove(item)} title="Удалить">×</button>
+          <button style={s.removeBtn} onClick={() => remove(item)} title="Удалить">
+            ×
+          </button>
         </div>
       ))}
       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
@@ -114,7 +192,9 @@ function SimpleList({ label, items, onChange, placeholder }) {
           placeholder={placeholder}
           style={{ ...s.input, flex: 1 }}
         />
-        <button style={s.addBtn} onClick={add}>Добавить</button>
+        <button style={s.addBtn} onClick={add}>
+          Добавить
+        </button>
       </div>
     </div>
   )
@@ -135,16 +215,32 @@ export default function SettingsView({ settings, onSave }) {
   })
 
   const handleSave = () => {
-    if (!form.projectName.trim()) { alert('Название проекта не может быть пустым'); return }
-    if (form.teamMembers.length === 0) { alert('Добавьте хотя бы одного члена команды'); return }
-    if (form.statuses.length === 0) { alert('Добавьте хотя бы один статус'); return }
-    if (form.priorities.length === 0) { alert('Добавьте хотя бы один приоритет'); return }
-    
+    if (!form.projectName.trim()) {
+      alert('Название проекта не может быть пустым')
+      return
+    }
+    if (form.teamMembers.length === 0) {
+      alert('Добавьте хотя бы одного члена команды')
+      return
+    }
+    if (form.statuses.length === 0) {
+      alert('Добавьте хотя бы один статус')
+      return
+    }
+    if (form.priorities.length === 0) {
+      alert('Добавьте хотя бы один приоритет')
+      return
+    }
+
     // Ensure every status/priority key has a label — fallback to key itself
     const statusLabels = { ...form.statusLabels }
-    form.statuses.forEach(k => { if (!statusLabels[k]) statusLabels[k] = k })
+    form.statuses.forEach(k => {
+      if (!statusLabels[k]) statusLabels[k] = k
+    })
     const priorityLabels = { ...form.priorityLabels }
-    form.priorities.forEach(k => { if (!priorityLabels[k]) priorityLabels[k] = k })
+    form.priorities.forEach(k => {
+      if (!priorityLabels[k]) priorityLabels[k] = k
+    })
 
     onSave({ ...form, statusLabels, priorityLabels })
     alert('Настройки сохранены!')
@@ -152,20 +248,43 @@ export default function SettingsView({ settings, onSave }) {
 
   return (
     <div style={s.container}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '1.2rem',
+        }}
+      >
         <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--tx)' }}>Настройки проекта</span>
-        <button style={s.saveBtn} onClick={handleSave}>Сохранить</button>
+        <button style={s.saveBtn} onClick={handleSave}>
+          Сохранить
+        </button>
       </div>
 
       <div style={s.section}>
         <div style={s.h}>Основные</div>
         <div style={s.row}>
           <label style={s.label}>Название проекта</label>
-          <input value={form.projectName} onChange={e => setForm(f => ({ ...f, projectName: e.target.value }))} placeholder="Roadmap" style={s.input} />
+          <input
+            value={form.projectName}
+            onChange={e => setForm(f => ({ ...f, projectName: e.target.value }))}
+            placeholder="Roadmap"
+            style={s.input}
+          />
         </div>
         <div style={s.toggle}>
-          <input type="checkbox" checked={form.useStoryPoints} onChange={e => setForm(f => ({ ...f, useStoryPoints: e.target.checked }))} style={s.checkbox} id="useStoryPoints" />
-          <label htmlFor="useStoryPoints" style={{ fontSize: 13, color: 'var(--tx)', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={form.useStoryPoints}
+            onChange={e => setForm(f => ({ ...f, useStoryPoints: e.target.checked }))}
+            style={s.checkbox}
+            id="useStoryPoints"
+          />
+          <label
+            htmlFor="useStoryPoints"
+            style={{ fontSize: 13, color: 'var(--tx)', cursor: 'pointer' }}
+          >
             Использовать Story Points (иначе часы)
           </label>
         </div>
@@ -201,7 +320,9 @@ export default function SettingsView({ settings, onSave }) {
           hint="Ключ используется внутри системы, название отображается в интерфейсе"
           items={form.priorities}
           labels={form.priorityLabels}
-          onChange={(keys, lbls) => setForm(f => ({ ...f, priorities: keys, priorityLabels: lbls }))}
+          onChange={(keys, lbls) =>
+            setForm(f => ({ ...f, priorities: keys, priorityLabels: lbls }))
+          }
           keyPlaceholder="blocker"
           labelPlaceholder="Блокер 🚨"
         />

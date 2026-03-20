@@ -15,7 +15,7 @@ export function validateTask(task) {
 
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
   }
 }
 

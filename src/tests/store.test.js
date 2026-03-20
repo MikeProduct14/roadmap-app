@@ -79,13 +79,25 @@ describe('loadState', () => {
 
 describe('saveState', () => {
   it('saves epics to localStorage', () => {
-    const state = { epics: [{ id: 'e1', name: 'Epic' }], tasks: [], nextEpicId: 2, nextTaskId: 1, settings: {} }
+    const state = {
+      epics: [{ id: 'e1', name: 'Epic' }],
+      tasks: [],
+      nextEpicId: 2,
+      nextTaskId: 1,
+      settings: {},
+    }
     saveState(state)
     expect(JSON.parse(localStorage.getItem('rm_epics'))).toEqual(state.epics)
   })
 
   it('saves tasks to localStorage', () => {
-    const state = { epics: [], tasks: [{ id: 't1', name: 'Task' }], nextEpicId: 1, nextTaskId: 2, settings: {} }
+    const state = {
+      epics: [],
+      tasks: [{ id: 't1', name: 'Task' }],
+      nextEpicId: 1,
+      nextTaskId: 2,
+      settings: {},
+    }
     saveState(state)
     expect(JSON.parse(localStorage.getItem('rm_tasks'))).toEqual(state.tasks)
   })

@@ -35,10 +35,11 @@
 
 ## Что осталось сделать 📋
 
-### Фаза 8: Оптимизация производительности (67%)
-- ✅ Добавлена мемоизация фильтрации задач в ScrumbanView (useMemo)
-- ✅ Добавлена мемоизация сортировки задач в Column компоненте (useMemo)
-- ✅ Добавлена мемоизация фильтрованных эпиков в EpicsView (useMemo)
+### Фаза 9: Финальное форматирование и линтинг (80%)
+- ✅ Запущен Prettier - все файлы отформатированы
+- ✅ Создан новый eslint.config.js для ESLint 9
+- ✅ Исправлены неиспользуемые импорты React
+- ✅ Исправлены неиспользуемые переменные
 - ✅ Все 72 теста проходят
 
 ## Деплой
@@ -46,15 +47,13 @@
 - ✅ Commit 2: `refactor(phase-6): Extract constants and sortTasks utility, clean up ScrumbanView`
 - ✅ Commit 3: `refactor(phase-6): Add useCollapsed hook and integrate with EpicsView`
 - ✅ Commit 4: `refactor(phase-7): Add task validation utility and integrate with Modal`
-- ⏳ Commit 5: `refactor(phase-8): Add useMemo for performance optimization in views`
+- ✅ Commit 5: `refactor(phase-8): Add useMemo for performance optimization in views`
+- ⏳ Commit 6: `refactor(phase-9): Format code with Prettier and fix ESLint issues`
 - ✅ Задеплоено на: https://mikeproduct14.github.io/roadmap-app/
 
 ## Что осталось сделать 📋
 
-### Фаза 8: Завершить оптимизацию (33%)
-- [ ] 12.3 Разбить большие компоненты на подкомпоненты (опционально)
-
-### Фаза 4: Реорганизация структуры (0%)
+### Фаза 10: Финальная проверка (0%)
 - [ ] Переместить view компоненты в `src/components/views/`
 - [ ] Переместить Modal в `src/components/layout/`
 - [ ] Переместить store.js и supabase.js в `src/services/`
@@ -155,7 +154,7 @@ npm run format:check
 ## Метрики
 
 - **Всего задач:** 54
-- **Выполнено:** 25 (46%)
-- **Осталось:** 29 (54%)
+- **Выполнено:** 29 (54%)
+- **Осталось:** 25 (46%)
 - **Тесты:** 72/72 проходят ✅
-- **Деплои:** 4 (5-й готов к деплою)
+- **Деплои:** 5 (6-й готов к деплою)
