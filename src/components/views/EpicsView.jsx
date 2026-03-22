@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { STATUS_LABELS, PRIO_LABELS, SPRINTS } from '../../services/store.js'
 import TaskRow from './TaskRow.jsx'
+import { useCollapsed } from '../../hooks/useCollapsed.js'
 
 const PRIO_COLORS = { critical: '#E24B4A', high: '#EF9F27', medium: '#378ADD', low: '#888780' }
 
@@ -69,26 +70,6 @@ function PrioLabel({ priority, priorityLabels }) {
       <span style={{ fontSize: 11, color: 'var(--tx2)', whiteSpace: 'nowrap' }}>{label}</span>
     </span>
   )
-}
-
-// Persist collapsed state to localStorage
-function useCollapsed(key) {
-  const [state, setState] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem(key) || '{}')
-    } catch {
-      return {}
-    }
-  })
-  const toggle = id =>
-    setState(c => {
-      const next = { ...c, [id]: !c[id] }
-      try {
-        localStorage.setItem(key, JSON.stringify(next))
-      } catch {}
-      return next
-    })
-  return [state, toggle]
 }
 
 export default function EpicsView({
