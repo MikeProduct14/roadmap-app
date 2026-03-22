@@ -35,12 +35,11 @@
 
 ## Что осталось сделать 📋
 
-### Фаза 9: Финальное форматирование и линтинг (80%)
-- ✅ Запущен Prettier - все файлы отформатированы
-- ✅ Создан новый eslint.config.js для ESLint 9
-- ✅ Исправлены неиспользуемые импорты React
-- ✅ Исправлены неиспользуемые переменные
-- ✅ Все 72 теста проходят
+### Фаза 10: Финальная проверка и документация (80%)
+- ✅ Запущен полный набор тестов - все 72 теста проходят
+- ✅ Обновлен README.md с новой структурой проекта
+- ✅ Созданы git коммиты для каждой фазы
+- ✅ Добавлены npm скрипты для разработки
 
 ## Деплой
 - ✅ Commit 1: `refactor(phase-1-3): Setup ESLint/Prettier, extract MultiSelect component`
@@ -48,12 +47,17 @@
 - ✅ Commit 3: `refactor(phase-6): Add useCollapsed hook and integrate with EpicsView`
 - ✅ Commit 4: `refactor(phase-7): Add task validation utility and integrate with Modal`
 - ✅ Commit 5: `refactor(phase-8): Add useMemo for performance optimization in views`
-- ⏳ Commit 6: `refactor(phase-9): Format code with Prettier and fix ESLint issues`
+- ✅ Commit 6: `refactor(phase-9): Format code with Prettier and fix ESLint issues`
+- ✅ Commit 7: `docs: Update README with new project structure and dev tools`
 - ✅ Задеплоено на: https://mikeproduct14.github.io/roadmap-app/
 
 ## Что осталось сделать 📋
 
-### Фаза 10: Финальная проверка (0%)
+### Опциональные задачи
+- [ ] 15.3 Проверить работу в offline режиме (ручное тестирование)
+- [ ] 15.6 Написать integration тесты для view компонентов (опционально)
+- [ ] 12.3 Разбить большие компоненты на подкомпоненты (опционально)
+- [ ] 14.4 Проверить размер компонентов (опционально)
 - [ ] Переместить view компоненты в `src/components/views/`
 - [ ] Переместить Modal в `src/components/layout/`
 - [ ] Переместить store.js и supabase.js в `src/services/`
@@ -154,7 +158,7 @@ npm run format:check
 ## Метрики
 
 - **Всего задач:** 54
-- **Выполнено:** 29 (54%)
-- **Осталось:** 25 (46%)
+- **Выполнено:** 30 (56%)
+- **Осталось:** 24 (44%)
 - **Тесты:** 72/72 проходят ✅
-- **Деплои:** 5 (6-й готов к деплою)
+- **Деплои:** 7 (все задеплоены)

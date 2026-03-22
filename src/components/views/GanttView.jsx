@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { SPRINTS, GANTT_BASE, GANTT_WEEKS } from './store.js'
+import { useState, Fragment } from 'react'
+import { SPRINTS, GANTT_BASE, GANTT_WEEKS } from '../../services/store.js'
 
 function weekLabel(i) {
   const d = new Date(GANTT_BASE)
@@ -109,7 +109,7 @@ export default function GanttView({ epics, tasks }) {
             const barW = ((ep.durW / GANTT_WEEKS) * 100).toFixed(2)
 
             return (
-              <React.Fragment key={ep.id}>
+              <Fragment key={ep.id}>
                 {/* Epic row */}
                 <div
                   style={{
@@ -303,7 +303,7 @@ export default function GanttView({ epics, tasks }) {
                     </div>
                   )
                 })}
-              </React.Fragment>
+              </Fragment>
             )
           })}
 

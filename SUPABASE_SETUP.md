@@ -4,7 +4,12 @@
 
 Проект уже создан:
 - **Project URL**: https://giawwwkckdwsyvujbgjm.supabase.co
-- **Publishable Key**: sb_publishable_hu6OIKJwbutmo02TaCcCrg_F_6Uoe2hDirect
+- **Anon Public Key**: Получи из Supabase Dashboard → Project Settings → API
+
+**ВАЖНО:** Нужно получить правильный anon public ключ:
+1. Открой https://supabase.com/dashboard/project/giawwwkckdwsyvujbgjm/settings/api
+2. Скопируй **anon public** ключ (длинная строка ~200+ символов, начинается с `eyJ`)
+3. Это JWT токен, а не просто строка "sb_publishable_..."
 
 ## Шаг 2: Создай таблицы в базе данных
 
@@ -27,7 +32,7 @@
 1. В левом меню выбери **Authentication** → **Providers**
 2. Найди **Google** и нажми на него
 3. Включи "Enable Sign in with Google"
-4. Скопируй **Callback URL**: `https://giawwwkckdwsyvujbgjm.supabase.co/auth/v1/callback`
+4. Скоп ируй **Callback URL**: `https://giawwwkckdwsyvujbgjm.supabase.co/auth/v1/callback`
 
 Настрой Google:
 1. Зайди на https://console.cloud.google.com

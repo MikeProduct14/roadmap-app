@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { SPRINTS, SPRINT_MESSAGES } from './store.js'
+import { SPRINTS, SPRINT_MESSAGES } from '../../services/store.js'
 
 const s = {
   container: { padding: '0 0 2rem' },

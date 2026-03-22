@@ -6,17 +6,9 @@ import {
   PRIO_LABELS,
   EFFORT_LABELS,
   ART_TYPES,
-} from './store.js'
-import { validateTask, showValidationErrors } from './utils/validation.js'
+} from '../../services/store.js'
+import { validateTask, showValidationErrors } from '../../utils/validation.js'
 
-const ALLOWED_FILE_TYPES = [
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'text/markdown',
-  'text/plain',
-]
 const ALLOWED_EXT = ['.pdf', '.docx', '.md', '.xls', '.xlsx']
 
 const s = {

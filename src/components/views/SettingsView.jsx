@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { STATUS_LABELS, PRIO_LABELS, EFFORT_LABELS } from './store.js'
+import { STATUS_LABELS, PRIO_LABELS, EFFORT_LABELS } from '../../services/store.js'
 
 const s = {
   container: { padding: '0 0 2rem' },

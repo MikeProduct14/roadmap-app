@@ -5,16 +5,16 @@ import {
   saveStateWithoutTimestamp,
   loadStateFromSupabase,
   saveStateToSupabase,
-} from './store.js'
-import { isSupabaseConfigured, supabase } from './supabase.js'
+} from './services/store.js'
+import { isSupabaseConfigured, supabase } from './services/supabase.js'
 import Auth, { LoginScreen } from './Auth.jsx'
-import Modal from './Modal.jsx'
-import EpicsView from './EpicsView.jsx'
-import GanttView from './GanttView.jsx'
-import ScrumbanView from './ScrumbanView.jsx'
-import SettingsView from './SettingsView.jsx'
-import SprintReview from './SprintReview.jsx'
-import RetroView from './RetroView.jsx'
+import Modal from './components/layout/Modal.jsx'
+import EpicsView from './components/views/EpicsView.jsx'
+import GanttView from './components/views/GanttView.jsx'
+import ScrumbanView from './components/views/ScrumbanView.jsx'
+import SettingsView from './components/views/SettingsView.jsx'
+import SprintReview from './components/views/SprintReview.jsx'
+import RetroView from './components/views/RetroView.jsx'
 
 const TABS = [
   { id: 'epics', label: '📋 Доска' },
@@ -39,8 +39,14 @@ function useStore(user) {
           setState(cloudState)
           saveStateWithoutTimestamp(cloudState)
         } else {
-          // Нет данных в Supabase — пушим локальные
-          console.log('[store] no Supabase data, pushing local state')
+          // Нет данных в Supabase или ошибка — используем локальные данные
+          console.log('[store] no Supabase data or error, using local state')
+          const localState = loadState()
+          if (localState) {
+            setState(localState)
+            console.log('[store] working in offline mode with local data')
+          }
+          // Пытаемся пушить локальные данные в Supabase
           setState(prev => {
             saveStateToSupabase(user.id, prev).then(() => {
               console.log('[store] local state pushed to Supabase')
@@ -67,7 +73,8 @@ function useStore(user) {
               console.log('[store] saved to Supabase OK, tasks:', next.tasks?.length)
             })
             .catch(err => {
-              console.error('[store] Supabase save error:', err)
+              console.error('[store] Supabase save error, data saved locally:', err)
+              // Данные уже сохранены в localStorage через saveState выше
             })
         }
         return next

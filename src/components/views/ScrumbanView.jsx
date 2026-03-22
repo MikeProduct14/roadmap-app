@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react'
-import { STATUS_LABELS, PRIO_LABELS, SPRINTS } from './store.js'
-import MultiSelect from './components/common/MultiSelect'
-import { PRIO_COLORS, STATUS_BG, STATUS_TX, SEL_STYLE } from './utils/constants'
-import { sortTasks } from './utils/sortTasks'
+import { STATUS_LABELS, PRIO_LABELS, SPRINTS } from '../../services/store.js'
+import MultiSelect from '../common/MultiSelect.jsx'
+import { PRIO_COLORS, STATUS_BG, STATUS_TX, SEL_STYLE } from '../../utils/constants.js'
+import { sortTasks } from '../../utils/sortTasks.js'
 
 const SEL = SEL_STYLE
 

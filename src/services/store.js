@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase.js'
-import { validateTask, showValidationErrors } from './utils/validation.js'
+import { withErrorHandling } from '../utils/errorHandler.js'
+import { validateTask, showValidationErrors } from '../utils/validation.js'
 
 // Initial seed data
 const SEED_EPICS = [
@@ -201,52 +202,59 @@ function load(key, fallback) {
 function save(key, val) {
   try {
     localStorage.setItem(key, JSON.stringify(val))
-  } catch {}
-}
-
-// Supabase functions
-export async function loadStateFromSupabase(userId) {
-  if (!isSupabaseConfigured() || !supabase) return null
-
-  try {
-    const { data, error } = await supabase
-      .from('roadmaps')
-      .select('*')
-      .eq('user_id', userId)
-      .single()
-
-    if (error) {
-      if (error.code === 'PGRST116') return null // No data yet — вернём null, App подставит seed
-      throw error
+  } catch (error) {
+    if (error.name === 'QuotaExceededError') {
+      console.error('localStorage quota exceeded')
+      alert('Недостаточно места для сохранения данных. Пожалуйста, очистите кэш браузера.')
+    } else {
+      console.error('Error saving to localStorage:', error)
     }
-
-    return {
-      // БАГ 5 FIX: если данные есть но пустые — используем seed
-      epics: data.epics?.length ? data.epics : SEED_EPICS,
-      tasks: data.tasks?.length ? data.tasks : SEED_TASKS,
-      nextEpicId: data.next_epic_id || 5,
-      nextTaskId: data.next_task_id || 10,
-      settings: data.settings || {
-        projectName: 'Roadmap',
-        teamMembers: DEFAULT_TEAM_MEMBERS,
-        statuses: DEFAULT_STATUSES,
-        priorities: DEFAULT_PRIORITIES,
-        efforts: DEFAULT_EFFORTS,
-        useStoryPoints: true,
-        sprintHistory: [],
-        statusLabels: { ...STATUS_LABELS },
-        priorityLabels: { ...PRIO_LABELS },
-        effortLabels: { ...EFFORT_LABELS },
-      },
-      _updatedAt: data.updated_at || null,
-    }
-  } catch (err) {
-    console.error('Error loading from Supabase:', err)
-    return null
   }
 }
 
-export async function saveStateToSupabase(userId, state) {
+// Supabase functions
+async function _loadStateFromSupabase(userId) {
+  if (!isSupabaseConfigured() || !supabase) return null
+
+  const { data, error } = await supabase
+    .from('roadmaps')
+    .select('*')
+    .eq('user_id', userId)
+    .single()
+
+  if (error) {
+    if (error.code === 'PGRST116') return null // No data yet — вернём null, App подставит seed
+    throw error
+  }
+
+  return {
+    // БАГ 5 FIX: если данные есть но пустые — используем seed
+    epics: data.epics?.length ? data.epics : SEED_EPICS,
+    tasks: data.tasks?.length ? data.tasks : SEED_TASKS,
+    nextEpicId: data.next_epic_id || 5,
+    nextTaskId: data.next_task_id || 10,
+    settings: data.settings || {
+      projectName: 'Roadmap',
+      teamMembers: DEFAULT_TEAM_MEMBERS,
+      statuses: DEFAULT_STATUSES,
+      priorities: DEFAULT_PRIORITIES,
+      efforts: DEFAULT_EFFORTS,
+      useStoryPoints: true,
+      sprintHistory: [],
+      statusLabels: { ...STATUS_LABELS },
+      priorityLabels: { ...PRIO_LABELS },
+      effortLabels: { ...EFFORT_LABELS },
+    },
+    _updatedAt: data.updated_at || null,
+  }
+}
+
+export const loadStateFromSupabase = withErrorHandling(
+  _loadStateFromSupabase,
+  'Ошибка загрузки данных из Supabase'
+)
+
+async function _saveStateToSupabase(userId, state) {
   if (!isSupabaseConfigured() || !supabase) return
 
   const payload = {
@@ -281,6 +289,11 @@ export async function saveStateToSupabase(userId, state) {
     throw error
   }
 }
+
+export const saveStateToSupabase = withErrorHandling(
+  _saveStateToSupabase,
+  'Ошибка сохранения данных в Supabase'
+)
 
 export function loadState() {
   return {

@@ -19,7 +19,7 @@ import {
   DEFAULT_TEAM_MEMBERS,
   SPRINTS,
   STORY_POINTS,
-} from '../store.js'
+} from '../services/store.js'
 
 beforeEach(() => {
   localStorage.clear()
