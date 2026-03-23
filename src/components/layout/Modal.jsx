@@ -378,7 +378,8 @@ function CommentsSection({ comments, onChange }) {
   const addComment = (attachedFiles = []) => {
     const trimmed = newComment.trim()
     if (!trimmed && attachedFiles.length === 0) return
-    onChange([...comments, { text: trimmed, date: new Date().toISOString(), files: attachedFiles }])
+    const updated = [...comments, { text: trimmed, date: new Date().toISOString(), files: attachedFiles }]
+    onChange(updated)
     setNewComment('')
   }
 

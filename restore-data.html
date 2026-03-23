@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Восстановление данных Roadmap App</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #378ADD;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 7px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #2a6bb3;
+        }
+        button.danger {
+            background: #E24B4A;
+        }
+        button.danger:hover {
+            background: #c93d3c;
+        }
+        .info {
+            background: #E6F1FB;
+            padding: 15px;
+            border-radius: 7px;
+            margin: 20px 0;
+            color: #185FA5;
+        }
+        .success {
+            background: #EAF3DE;
+            padding: 15px;
+            border-radius: 7px;
+            margin: 20px 0;
+            color: #3B6D11;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Восстановление данных Roadmap App</h1>
+        
+        <div class="info">
+            <strong>Что делает эта страница:</strong><br>
+            Восстанавливает seed данные (эпики и задачи по умолчанию) в localStorage.
+        </div>
+
+        <button onclick="restoreData()">✅ Восстановить seed данные</button>
+        <button onclick="clearAll()" class="danger">🗑️ Очистить все данные</button>
+        <button onclick="showData()">👁️ Показать текущие данные</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const SEED_EPICS = [
+            { id: 'e1', name: 'Личный сайт / портфолио', color: '#378ADD', sprint: 'Sprint 1', startW: 0, durW: 3 },
+            { id: 'e2', name: 'Контент-машина', color: '#1D9E75', sprint: 'Sprint 1', startW: 1, durW: 4 },
+            { id: 'e3', name: 'Курс вайбкодинга', color: '#D85A30', sprint: 'Sprint 2', startW: 4, durW: 6 },
+            { id: 'e4', name: 'MVP трекер привычек', color: '#534AB7', sprint: 'Sprint 3', startW: 8, durW: 5 }
+        ];
+
+        const SEED_TASKS = [
+            { id: 't1', epicId: 'e1', parentId: null, name: 'Figma макет главной', status: 'done', priority: 'high', sprint: 'Sprint 1', effort: 'M', storyPoints: 5, estimateHours: 4, deadline: '2026-03-18', description: '', comments: [], artifacts: [{ type: 'link', name: 'Figma', url: 'https://figma.com' }], assignee: 'Мария', timeLog: [] },
+            { id: 't2', epicId: 'e1', parentId: 't1', name: 'Утвердить с ментором', status: 'done', priority: 'medium', sprint: 'Sprint 1', effort: 'S', storyPoints: 1, estimateHours: 1, deadline: '2026-03-19', description: '', comments: [], artifacts: [], assignee: 'Иван', timeLog: [] },
+            { id: 't3', epicId: 'e1', parentId: null, name: 'Верстка React + Vite', status: 'wip', priority: 'critical', sprint: 'Sprint 1', effort: 'L', storyPoints: 8, estimateHours: 16, deadline: '2026-03-28', description: '', comments: [], artifacts: [{ type: 'doc', name: 'Бриф.docx', url: '' }], assignee: 'Алексей', timeLog: [{ date: '2026-03-16', hours: 4, comment: 'Настройка проекта' }] },
+            { id: 't4', epicId: 'e1', parentId: 't3', name: 'Компонент Hero секции', status: 'wip', priority: 'high', sprint: 'Sprint 1', effort: 'S', storyPoints: 3, estimateHours: 3, deadline: '2026-03-22', description: '', comments: [], artifacts: [], assignee: 'Алексей', timeLog: [] },
+            { id: 't5', epicId: 'e1', parentId: 't3', name: 'Компонент кейсов', status: 'ready', priority: 'medium', sprint: 'Sprint 1', effort: 'M', storyPoints: 5, estimateHours: 6, deadline: '2026-03-26', description: '', comments: [], artifacts: [], assignee: 'Не назначен', timeLog: [] },
+            { id: 't6', epicId: 'e2', parentId: null, name: 'Контент-план апрель', status: 'wip', priority: 'high', sprint: 'Sprint 1', effort: 'M', storyPoints: 5, estimateHours: 5, deadline: '2026-03-25', description: '', comments: [], artifacts: [{ type: 'doc', name: 'КП_апрель.docx', url: '' }], assignee: 'Мария', timeLog: [] },
+            { id: 't7', epicId: 'e2', parentId: 't6', name: 'Темы для Reels', status: 'ready', priority: 'medium', sprint: 'Sprint 1', effort: 'S', storyPoints: 2, estimateHours: 2, deadline: '2026-03-23', description: '', comments: [], artifacts: [], assignee: 'Мария', timeLog: [] },
+            { id: 't8', epicId: 'e3', parentId: null, name: 'Программа курса', status: 'backlog', priority: 'high', sprint: 'Sprint 2', effort: 'L', storyPoints: 13, estimateHours: 20, deadline: '2026-04-15', description: '', comments: [], artifacts: [{ type: 'pdf', name: 'Программа.pdf', url: '' }], assignee: 'Не назначен', timeLog: [] },
+            { id: 't9', epicId: 'e4', parentId: null, name: 'PRD трекера', status: 'backlog', priority: 'medium', sprint: 'Sprint 3', effort: 'M', storyPoints: 5, estimateHours: 8, deadline: '2026-05-10', description: '', comments: [], artifacts: [], assignee: 'Не назначен', timeLog: [] }
+        ];
+
+        function restoreData() {
+            try {
+                localStorage.setItem('rm_epics', JSON.stringify(SEED_EPICS));
+                localStorage.setItem('rm_tasks', JSON.stringify(SEED_TASKS));
+                localStorage.setItem('rm_neid', '5');
+                localStorage.setItem('rm_ntid', '10');
+                
+                document.getElementById('result').innerHTML = `
+                    <div class="success">
+                        <strong>✅ Данные восстановлены!</strong><br>
+                        Восстановлено: ${SEED_EPICS.length} эпиков и ${SEED_TASKS.length} задач.<br>
+                        <br>
+                        <a href="/" style="color: #3B6D11; font-weight: 600;">← Вернуться в приложение</a>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('result').innerHTML = `
+                    <div style="background: #FCEBEB; padding: 15px; border-radius: 7px; color: #A32D2D;">
+                        <strong>❌ Ошибка:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function clearAll() {
+            if (!confirm('Вы уверены? Это удалит ВСЕ данные из localStorage!')) return;
+            
+            localStorage.clear();
+            document.getElementById('result').innerHTML = `
+                <div class="success">
+                    <strong>✅ Все данные очищены!</strong><br>
+                    <a href="/" style="color: #3B6D11; font-weight: 600;">← Вернуться в приложение</a>
+                </div>
+            `;
+        }
+
+        function showData() {
+            const epics = localStorage.getItem('rm_epics');
+            const tasks = localStorage.getItem('rm_tasks');
+            
+            const epicsCount = epics ? JSON.parse(epics).length : 0;
+            const tasksCount = tasks ? JSON.parse(tasks).length : 0;
+            
+            document.getElementById('result').innerHTML = `
+                <div class="info">
+                    <strong>📊 Текущие данные:</strong><br>
+                    Эпиков: ${epicsCount}<br>
+                    Задач: ${tasksCount}<br>
+                    <br>
+                    <details>
+                        <summary style="cursor: pointer; font-weight: 600;">Показать JSON</summary>
+                        <pre style="background: #f5f5f5; padding: 10px; border-radius: 5px; overflow: auto; max-height: 300px; font-size: 11px;">Epics:\n${epics || 'null'}\n\nTasks:\n${tasks || 'null'}</pre>
+                    </details>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
