@@ -9,7 +9,7 @@ import {
 } from '../../services/store.js'
 import { validateTask, showValidationErrors } from '../../utils/validation.js'
 
-const ALLOWED_EXT = ['.pdf', '.docx', '.md', '.xls', '.xlsx', '.zip']
+const ALLOWED_EXT = ['.pdf', '.docx', '.md', '.xls', '.xlsx', '.zip', '.rar']
 
 const s = {
   overlay: {
@@ -324,7 +324,7 @@ function FileAttachment({ attachments, onChange }) {
 
   return (
     <div style={s.row}>
-      <label style={s.label}>Прикреплённые файлы (PDF, DOCX, MD, XLS, XLSX, ZIP — до 5 МБ)</label>
+      <label style={s.label}>Прикреплённые файлы (PDF, DOCX, MD, XLS, XLSX, ZIP, RAR — до 5 МБ)</label>
       <div
         style={{
           display: 'flex',
@@ -360,7 +360,7 @@ function FileAttachment({ attachments, onChange }) {
         ref={fileInputRef}
         type="file"
         multiple
-        accept=".pdf,.docx,.md,.xls,.xlsx,.zip"
+        accept=".pdf,.docx,.md,.xls,.xlsx,.zip,.rar"
         style={{ display: 'none' }}
         onChange={handleFileSelect}
       />
@@ -487,7 +487,7 @@ function CommentsSection({ comments, onChange }) {
           ref={fileInputRef}
           type="file"
           multiple
-          accept=".pdf,.docx,.md,.xls,.xlsx,.zip"
+          accept=".pdf,.docx,.md,.xls,.xlsx,.zip,.rar"
           style={{ display: 'none' }}
           onChange={handleFileAttach}
         />
