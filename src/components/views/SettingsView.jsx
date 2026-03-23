@@ -337,6 +337,247 @@ export default function SettingsView({ settings, onSave }) {
           placeholder="XXL"
         />
       </div>
+
+      <div style={s.section}>
+        <div style={s.h}>Управление данными</div>
+        <div style={s.row}>
+          <label style={s.label}>Восстановление seed данных</label>
+          <div style={{ ...s.hint, marginBottom: 12 }}>
+            Восстанавливает демо-данные (4 эпика и 9 задач). Текущие данные будут заменены.
+          </div>
+          <button
+            style={{
+              ...s.addBtn,
+              background: '#EF9F27',
+              color: 'white',
+              border: 'none',
+              fontWeight: 600,
+            }}
+            onClick={() => {
+              if (
+                !confirm(
+                  'Вы уверены? Это заменит все текущие данные на демо-данные.\n\nЭто действие нельзя отменить!'
+                )
+              )
+                return
+
+              // Restore seed data
+              const SEED_EPICS = [
+                {
+                  id: 'e1',
+                  name: 'Личный сайт / портфолио',
+                  color: '#378ADD',
+                  sprint: 'Sprint 1',
+                  startW: 0,
+                  durW: 3,
+                },
+                {
+                  id: 'e2',
+                  name: 'Контент-машина',
+                  color: '#1D9E75',
+                  sprint: 'Sprint 1',
+                  startW: 1,
+                  durW: 4,
+                },
+                {
+                  id: 'e3',
+                  name: 'Курс вайбкодинга',
+                  color: '#D85A30',
+                  sprint: 'Sprint 2',
+                  startW: 4,
+                  durW: 6,
+                },
+                {
+                  id: 'e4',
+                  name: 'MVP трекер привычек',
+                  color: '#534AB7',
+                  sprint: 'Sprint 3',
+                  startW: 8,
+                  durW: 5,
+                },
+              ]
+
+              const SEED_TASKS = [
+                {
+                  id: 't1',
+                  epicId: 'e1',
+                  parentId: null,
+                  name: 'Figma макет главной',
+                  status: 'done',
+                  priority: 'high',
+                  sprint: 'Sprint 1',
+                  effort: 'M',
+                  storyPoints: 5,
+                  estimateHours: 4,
+                  deadline: '2026-03-18',
+                  description: '',
+                  comments: [],
+                  artifacts: [{ type: 'link', name: 'Figma', url: 'https://figma.com' }],
+                  assignee: 'Мария',
+                  timeLog: [],
+                },
+                {
+                  id: 't2',
+                  epicId: 'e1',
+                  parentId: 't1',
+                  name: 'Утвердить с ментором',
+                  status: 'done',
+                  priority: 'medium',
+                  sprint: 'Sprint 1',
+                  effort: 'S',
+                  storyPoints: 1,
+                  estimateHours: 1,
+                  deadline: '2026-03-19',
+                  description: '',
+                  comments: [],
+                  artifacts: [],
+                  assignee: 'Иван',
+                  timeLog: [],
+                },
+                {
+                  id: 't3',
+                  epicId: 'e1',
+                  parentId: null,
+                  name: 'Верстка React + Vite',
+                  status: 'wip',
+                  priority: 'critical',
+                  sprint: 'Sprint 1',
+                  effort: 'L',
+                  storyPoints: 8,
+                  estimateHours: 16,
+                  deadline: '2026-03-28',
+                  description: '',
+                  comments: [],
+                  artifacts: [{ type: 'doc', name: 'Бриф.docx', url: '' }],
+                  assignee: 'Алексей',
+                  timeLog: [{ date: '2026-03-16', hours: 4, comment: 'Настройка проекта' }],
+                },
+                {
+                  id: 't4',
+                  epicId: 'e1',
+                  parentId: 't3',
+                  name: 'Компонент Hero секции',
+                  status: 'wip',
+                  priority: 'high',
+                  sprint: 'Sprint 1',
+                  effort: 'S',
+                  storyPoints: 3,
+                  estimateHours: 3,
+                  deadline: '2026-03-22',
+                  description: '',
+                  comments: [],
+                  artifacts: [],
+                  assignee: 'Алексей',
+                  timeLog: [],
+                },
+                {
+                  id: 't5',
+                  epicId: 'e1',
+                  parentId: 't3',
+                  name: 'Компонент кейсов',
+                  status: 'ready',
+                  priority: 'medium',
+                  sprint: 'Sprint 1',
+                  effort: 'M',
+                  storyPoints: 5,
+                  estimateHours: 6,
+                  deadline: '2026-03-26',
+                  description: '',
+                  comments: [],
+                  artifacts: [],
+                  assignee: 'Не назначен',
+                  timeLog: [],
+                },
+                {
+                  id: 't6',
+                  epicId: 'e2',
+                  parentId: null,
+                  name: 'Контент-план апрель',
+                  status: 'wip',
+                  priority: 'high',
+                  sprint: 'Sprint 1',
+                  effort: 'M',
+                  storyPoints: 5,
+                  estimateHours: 5,
+                  deadline: '2026-03-25',
+                  description: '',
+                  comments: [],
+                  artifacts: [{ type: 'doc', name: 'КП_апрель.docx', url: '' }],
+                  assignee: 'Мария',
+                  timeLog: [],
+                },
+                {
+                  id: 't7',
+                  epicId: 'e2',
+                  parentId: 't6',
+                  name: 'Темы для Reels',
+                  status: 'ready',
+                  priority: 'medium',
+                  sprint: 'Sprint 1',
+                  effort: 'S',
+                  storyPoints: 2,
+                  estimateHours: 2,
+                  deadline: '2026-03-23',
+                  description: '',
+                  comments: [],
+                  artifacts: [],
+                  assignee: 'Мария',
+                  timeLog: [],
+                },
+                {
+                  id: 't8',
+                  epicId: 'e3',
+                  parentId: null,
+                  name: 'Программа курса',
+                  status: 'backlog',
+                  priority: 'high',
+                  sprint: 'Sprint 2',
+                  effort: 'L',
+                  storyPoints: 13,
+                  estimateHours: 20,
+                  deadline: '2026-04-15',
+                  description: '',
+                  comments: [],
+                  artifacts: [{ type: 'pdf', name: 'Программа.pdf', url: '' }],
+                  assignee: 'Не назначен',
+                  timeLog: [],
+                },
+                {
+                  id: 't9',
+                  epicId: 'e4',
+                  parentId: null,
+                  name: 'PRD трекера',
+                  status: 'backlog',
+                  priority: 'medium',
+                  sprint: 'Sprint 3',
+                  effort: 'M',
+                  storyPoints: 5,
+                  estimateHours: 8,
+                  deadline: '2026-05-10',
+                  description: '',
+                  comments: [],
+                  artifacts: [],
+                  assignee: 'Не назначен',
+                  timeLog: [],
+                },
+              ]
+
+              try {
+                localStorage.setItem('rm_epics', JSON.stringify(SEED_EPICS))
+                localStorage.setItem('rm_tasks', JSON.stringify(SEED_TASKS))
+                localStorage.setItem('rm_neid', '5')
+                localStorage.setItem('rm_ntid', '10')
+                alert('✅ Данные восстановлены! Страница будет перезагружена.')
+                window.location.reload()
+              } catch (error) {
+                alert('❌ Ошибка восстановления данных: ' + error.message)
+              }
+            }}
+          >
+            🔄 Восстановить seed данные
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
