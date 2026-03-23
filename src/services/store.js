@@ -251,7 +251,8 @@ async function _loadStateFromSupabase(userId) {
 
 export const loadStateFromSupabase = withErrorHandling(
   _loadStateFromSupabase,
-  'Ошибка загрузки данных из Supabase'
+  'Ошибка загрузки данных из Supabase',
+  true
 )
 
 async function _saveStateToSupabase(userId, state) {
@@ -292,7 +293,8 @@ async function _saveStateToSupabase(userId, state) {
 
 export const saveStateToSupabase = withErrorHandling(
   _saveStateToSupabase,
-  'Ошибка сохранения данных в Supabase'
+  'Ошибка сохранения данных в Supabase',
+  true
 )
 
 export function loadState() {

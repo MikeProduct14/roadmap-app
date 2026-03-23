@@ -39,19 +39,17 @@ function useStore(user) {
           setState(cloudState)
           saveStateWithoutTimestamp(cloudState)
         } else {
-          // Нет данных в Supabase или ошибка — используем локальные данные
-          console.log('[store] no Supabase data or error, using local state')
+          // Нет данных в Supabase — берём из localStorage (или seed если localStorage пустой)
+          console.log('[store] no Supabase data, using local/seed state')
           const localState = loadState()
-          if (localState) {
-            setState(localState)
-            console.log('[store] working in offline mode with local data')
-          }
-          // Пытаемся пушить локальные данные в Supabase
-          setState(prev => {
-            saveStateToSupabase(user.id, prev).then(() => {
-              console.log('[store] local state pushed to Supabase')
-            })
-            return prev
+          setState(localState)
+          // Сразу сохраняем в Supabase (тихо, без alert)
+          saveStateToSupabase(user.id, localState).then(result => {
+            if (result !== null) {
+              console.log('[store] initial state saved to Supabase')
+            } else {
+              console.log('[store] Supabase unavailable, working with local data')
+            }
           })
         }
         setLoading(false)
