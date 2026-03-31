@@ -39,9 +39,20 @@ npm run dev
 
 Подробная инструкция в **[DEPLOY.md](./DEPLOY.md)**
 
-Если используешь Supabase, не забудь:
-1. Добавить секреты в GitHub (Settings → Secrets)
-2. Обновить redirect URLs в OAuth провайдерах
+⚠️ **Важно!** Если используешь Supabase:
+
+1. **Добавь секреты в GitHub** (Settings → Secrets and variables → Actions):
+   - `VITE_SUPABASE_URL` - URL вашего Supabase проекта
+   - `VITE_SUPABASE_ANON_KEY` - Anon/Public ключ
+
+2. **Настрой Redirect URLs в Supabase** (Authentication → URL Configuration):
+   - Добавь `https://ваш-username.github.io/roadmap-app/` в Redirect URLs
+   - Установи тот же URL как Site URL
+
+3. **Настрой OAuth провайдеры** (Google, GitHub):
+   - Обнови Authorized redirect URIs на `https://ваш-проект.supabase.co/auth/v1/callback`
+
+Если при авторизации возникает ошибка `ERR_CONNECTION_CLOSED`, см. **[GITHUB_PAGES_FIX.md](./GITHUB_PAGES_FIX.md)**
 
 ---
 

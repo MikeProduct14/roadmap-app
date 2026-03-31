@@ -122,13 +122,29 @@ export default function App() {
       <div
         style={{
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           height: '100vh',
           color: 'var(--tx2)',
+          gap: 16,
         }}
       >
-        Загрузка...
+        <div>Загрузка...</div>
+        {!isSupabaseConfigured() && (
+          <div style={{ 
+            fontSize: 12, 
+            color: '#E24B4A',
+            maxWidth: 400,
+            textAlign: 'center',
+            padding: 16,
+            background: 'var(--bg2)',
+            borderRadius: 8,
+            border: '1px solid var(--bd2)'
+          }}>
+            ⚠️ Supabase не настроен. Проверьте переменные окружения в консоли браузера (F12).
+          </div>
+        )}
       </div>
     )
   }

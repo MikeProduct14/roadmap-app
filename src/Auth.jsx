@@ -317,7 +317,10 @@ export function LoginScreen() {
 
   const getRedirectUrl = () => {
     const { origin, pathname } = window.location
-    return `${origin}${pathname.endsWith('/') ? pathname : pathname + '/'}`
+    // Для GitHub Pages учитываем base path
+    const basePath = import.meta.env.BASE_URL || '/'
+    const fullPath = pathname.endsWith('/') ? pathname : pathname + '/'
+    return `${origin}${fullPath}`
   }
 
   const signInWithGoogle = async () => {
