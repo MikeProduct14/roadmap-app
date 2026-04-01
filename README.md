@@ -54,6 +54,14 @@ npm run dev
 
 Если при авторизации возникает ошибка `ERR_CONNECTION_CLOSED`, см. **[GITHUB_PAGES_FIX.md](./GITHUB_PAGES_FIX.md)**
 
+### Keep-Alive для Supabase
+
+Настроены автоматические пинги через GitHub Actions, чтобы проект не засыпал:
+- 🔄 Пинг каждые 3 дня
+- 🏥 Health check каждую неделю
+
+Подробнее: **[KEEP_ALIVE.md](./KEEP_ALIVE.md)**
+
 ---
 
 ## Вайбкодинг — как дорабатывать

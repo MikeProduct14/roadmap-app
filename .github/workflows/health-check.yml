@@ -1,0 +1,49 @@
+name: Health Check
+
+on:
+  schedule:
+    # Каждую неделю в понедельник в 9:00 UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch: # Можно запустить вручную
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Supabase Health
+        run: |
+          echo "🏥 Checking Supabase health..."
+          
+          # Проверка REST API
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://giawwwkckdwsyvujbgjm.supabase.co/rest/v1/" \
+            -H "apikey: ${{ secrets.VITE_SUPABASE_ANON_KEY }}")
+          
+          if [ "$RESPONSE" -eq 200 ]; then
+            echo "✅ REST API is healthy (HTTP $RESPONSE)"
+          else
+            echo "⚠️ REST API returned HTTP $RESPONSE"
+            exit 1
+          fi
+      
+      - name: Check Auth Service
+        run: |
+          echo "🔐 Checking Auth service..."
+          
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://giawwwkckdwsyvujbgjm.supabase.co/auth/v1/health")
+          
+          if [ "$RESPONSE" -eq 200 ]; then
+            echo "✅ Auth service is healthy (HTTP $RESPONSE)"
+          else
+            echo "⚠️ Auth service returned HTTP $RESPONSE"
+          fi
+      
+      - name: Summary
+        if: always()
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Health check completed at $(date)"
+          echo "Project: giawwwkckdwsyvujbgjm"
+          echo "Next check: next Monday at 9:00 UTC"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
